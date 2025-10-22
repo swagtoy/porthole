@@ -32,6 +32,12 @@ t_dependency_parsing()
 	assert(ph_atom_parse_string("something/package-1.0:3.0::gentoo[--be,-buz(+))]", &atom, opts) != 0);
 	assert(ph_atom_parse_string("something/package-1.0:3.0::gentoo[--be,-buz(+,]", &atom, opts) != 0);
 	assert(ph_atom_parse_string("something/package-1.0:3.0::gentoo[be,]", &atom, opts) != 0);
+	assert(ph_atom_parse_string(">=media-video/knobgoblin-1.3.4.0a_alpha_beta3_p_p20244040_alpha-r3:0/b::wow[!knobbed?,-test(+)?,foogbaab]", &atom, opts) == 0);
+	_atom_debug_print(&atom);
+	
+	assert(ph_atom_parse_string(">=cat/pkg-1.0.0v_alpha2_beta3-rc-1:slot/sub=[!usedep?]::gentoo", &atom, opts) != 0);
+	assert(ph_atom_parse_string(">=cat/pkg-1.0.0v_alpha2_beta3-r3:slot/sub::gentoo[!usedep?]", &atom, opts) == 0);
+	assert(ph_atom_parse_string(">=cat/pkg-1.0.0v_alpha2_beta3-r3:slot/sub=[!usedep?]::gentoo", &atom, opts) != 0);
 }
 
 int
@@ -69,19 +75,12 @@ main()
 	assert(strcmp(">=media-video/revised-knob-3.0-r15:12/5::wow", noclobber) == 0);
 	_atom_debug_print(&atom);
 	
-	assert(ph_atom_parse_string(">=media-video/knobgoblin-1.3.4.0a_alpha_beta3_p_p20244040_alpha-r3:0/b::wow[!knobbed?,-test(+)?,foogbaab=]", &atom, 0) == 0);
-	_atom_debug_print(&atom);
-	
 	/* https://github.com/pkgcore/pkgcore/pull/420
 	 * I accidentally stumbled upon this old bug somehow in pkgcore
 	 * and was curious if we would pass it. */
 	assert(ph_atom_parse_string("foo/bar-11-r3", &atom, 0) == 0);
 	assert(strcmp(atom.pkgname, "bar-11-r3") != 0);
 	_atom_debug_print(&atom);
-	
-	assert(ph_atom_parse_string(">=cat/pkg-1.0.0v_alpha2_beta3-rc-1:slot/sub=[!usedep?]::gentoo", &atom, 0) != 0);
-	assert(ph_atom_parse_string(">=cat/pkg-1.0.0v_alpha2_beta3-r3:slot/sub::gentoo[!usedep?]", &atom, 0) == 0);
-	assert(ph_atom_parse_string(">=cat/pkg-1.0.0v_alpha2_beta3-r3:slot/sub=[!usedep?]::gentoo", &atom, 0) != 0);
 	assert(ph_atom_parse_string(">=media-video/knob-goblin-1.0_alpha-r4::wow", &atom, 0) == 0);
 	assert(ph_atom_parse_string(">=media-video/knobgoblin:4", &atom, 0) == 0);
 	assert(ph_atom_parse_string("a/a-a_1a", &atom, 0) == 0);

@@ -132,9 +132,8 @@ ph_atom_parse_string(char const *atomstr, ph_atom_t *atom, ph_atom_parse_opts_t 
 {
 	char *tmp,
 	     *deptmp,
-		 *work = NULL, /* we need to free/set storage later at a whim,
+		 *work = NULL; /* we need to free/set storage later at a whim,
 		                * so this is our working var */
-		 *slotchr; // Only used to check if slotchr < tmp
 	char *storage = NULL;
 	char *category = NULL;
 	bool err = false;
@@ -156,9 +155,25 @@ ph_atom_parse_string(char const *atomstr, ph_atom_t *atom, ph_atom_parse_opts_t 
 	
 	// dont want to clobber the old string, so we'll work on this one
 	storage = work = str_new_from_cstr(atomstr);
-	slotchr = strchr(work, ':');
+	
+	/* but before our string gets clobbered with null terminators,
+	 *   let's go ahead and look at '['. */
+	if ((deptmp = strchr(work, '[')))
+	{
+		if ((opts & PH_ATOM_PARSE_DEPENDENCY) == PH_ATOM_PARSE_DEPENDENCY)
+		{
+			if (ph_use_deps_parse(deptmp, &atom->use_deps) != 0)
+				goto err;
+		}
+		else
+			goto err;
+	}
+	else
+		memset(&atom->use_deps, 0, sizeof(struct ph_atom_use_deps));
+	
 	if ((tmp = _category_strchr(work, '/', &err)))
 	{
+		char *slotchr = strchr(work, ':');
 		// Don't count "package-name:0/2"
 		if (slotchr && tmp > slotchr)
 		{
@@ -193,21 +208,6 @@ ph_atom_parse_string(char const *atomstr, ph_atom_t *atom, ph_atom_parse_opts_t 
 	}
 	// later, we'll null terminate it
 	atom->pkgname = work;
-	
-	/* Before our string gets clobbered with null terminators, let's
-	 *   go ahead and look at '['. */
-	if ((opts & PH_ATOM_PARSE_DEPENDENCY) == PH_ATOM_PARSE_DEPENDENCY)
-	{
-		if ((deptmp = strchr(work, '[')))
-		{
-			if (ph_use_deps_parse(deptmp, &atom->use_deps) != 0)
-				goto err;
-		}
-		else
-			memset(&atom->use_deps, 0, sizeof(struct ph_atom_use_deps));
-	}
-	else
-		memset(&atom->use_deps, 0, sizeof(struct ph_atom_use_deps));
 	
 	// check for repo name
 	bool is_slot = false;
