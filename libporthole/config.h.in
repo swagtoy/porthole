@@ -1,0 +1,10 @@
+#mesondefine EXTRA_DEBUG
+#define VERSION_STR "@version@"
+
+#ifdef __GNUC__
+#	define _LIBPH_PUBLIC  __attribute__((visibility("default")))
+#	define _LIBPH_PRIVATE __attribute__((visibility("hidden")))
+#else
+#	define _LIBPH_PUBLIC
+#	define _LIBPH_PRIVATE
+#endif
