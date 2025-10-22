@@ -1,6 +1,7 @@
 #ifndef LIBPORTHOLE_COMMON_H
 #define LIBPORTHOLE_COMMON_H
 
+#include <stdbool.h>
 #include "libporthole_config.h"
 
 #ifdef EXTRA_DEBUG
@@ -15,5 +16,6 @@
 #endif
 
 _LIBPH_PRIVATE char _str_oneof(char source, char const *match);
+_LIBPH_PRIVATE char *_next_nb(char *point, int min_travel, bool *err);
 
 #endif
