@@ -1,2 +1,3 @@
 option('i_know_precisely_what_i_want', type: 'boolean', value: false, description:
          'Extra debug prints. Do not ever enable this. Seriously.')
+option('cache_dir', type: 'string', value: '/var/cache/porthole/')

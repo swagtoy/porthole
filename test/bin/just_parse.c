@@ -18,7 +18,7 @@ main(int argc, char **argv)
 	}
 	
 	ph_atom_t atom;
-	int ret = ph_atom_parse_string(res, &atom, PH_ATOM_PARSE_DEPENDENCY);
+	int ret = ph_atom_parse_string(res, &atom, PH_ATOM_PARSE_DEPENDENCY | PH_ATOM_PARSE_STRIP_EBUILD);
 	
 	return ret == 0 ? 0 : 1;
 }

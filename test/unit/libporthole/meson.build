@@ -4,6 +4,7 @@ tests = [
 	[ 'String test',      'string_test',      'string_test.c' ],
 	[ 'Validation tests', 'validation_tests', 'validation_tests.c' ],
 	[ 'Atom tests',       'atom_tests',       'atom_tests.c' ],
+	[ 'Database tests',   'database_tests',   'database_tests.c' ],
 #	[ 'Common test',      'common_test',      'common_test.c' ],
 	[ 'repos/Everything test', 'repo_everything_test', 'repo_everything_test.c' ],
 ]

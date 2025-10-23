@@ -1,5 +1,6 @@
 #mesondefine EXTRA_DEBUG
 #define VERSION_STR "@version@"
+#define PH_CACHE_DIR "@cache_dir@"
 
 #ifdef __GNUC__
 #	define _LIBPH_PUBLIC  __attribute__((visibility("default")))
