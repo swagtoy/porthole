@@ -23,6 +23,8 @@ t_dependency_parsing()
 	_atom_debug_print(&atom);
 	assert(ph_atom_parse_string("something/package-1.0:3.0::gentoo[-be,-buz(-)?,-bu]", &atom, opts) == 0);
 	_atom_debug_print(&atom);
+	assert(ph_atom_parse_string(">=_.+-0-/_-test-T-123_beta1_-4a-6+-_p--1.00.02b_alpha3_pre_p4-r5:slot/_-+6-9=[test(+),test(-)]", &atom, opts) == 0);
+	_atom_debug_print(&atom);
 	assert(ph_atom_parse_string("something/package-1.0:3.0::gentoo[--be,-buz(-)?,-bu]", &atom, opts) != 0);
 	assert(ph_atom_parse_string("something/package-1.0:3.0::gentoo[--be,-buz()?,-bu]", &atom, opts) != 0);
 	assert(ph_atom_parse_string("something/package-1.0:3.0::gentoo[--be,-buz(/)?,-bu]", &atom, opts) != 0);

@@ -134,6 +134,14 @@ ph_use_deps_parse(char *atomstr, ph_atom_use_deps_t *dep)
 				if (*tmp != ']') ++tmp;
 			}
 			
+			if (*tmp == ',')
+			{
+				// extra sanity check (is this needed?)
+				if (tmp[-1] == ',' || tmp[1] == ',')
+					goto err;
+				++tmp;
+			}
+			
 			atomstr = tmp;
 		}
 		else
