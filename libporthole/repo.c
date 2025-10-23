@@ -1,8 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
-#ifdef __linux__
-#	include <linux/limits.h>
-#else
+#include <limits.h>
+#ifndef PATH_MAX
 #	warning "No PATH_MAX detected, using a hardcoded guestimate of 2048"
 #	define PATH_MAX 2048
 #endif

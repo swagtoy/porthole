@@ -15,6 +15,8 @@
 #	define DEBUGF(msg, ...) ;
 #endif
 
+#define _PH_IMPORTED_FILE(x) (char*)x, x##_len
+
 _LIBPH_PRIVATE char _str_oneof(char source, char const *match);
 _LIBPH_PRIVATE char *_next_nb(char *point, int min_travel, bool *err);
 

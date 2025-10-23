@@ -7,6 +7,7 @@ sources = files('''
 '''.split())
 subdir('util')
 subdir('db')
+subdir('data')
 
 # See `config.h.in' for the definitions these map to.
 conf_h = configuration_data()

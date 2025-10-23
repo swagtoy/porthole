@@ -2,21 +2,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef __linux__
-#	include <linux/limits.h>
-#else
+#include <limits.h>
+#ifndef PATH_MAX
 #	warning "No PATH_MAX detected, using a hardcoded guestimate of 2048"
 #	define PATH_MAX 2048
 #endif
 #include "database.h"
 #include "common.h"
+#include "data/setup.sql.h"
 
 #define _DB_FILENAME "phcache.db"
 
 struct _ph_database_impl
 {
-	sqlite3* sdb;
+	sqlite3 *sdb;
 };
+
+bool
+_setup_database(struct _ph_database_impl *impl)
+{
+	sqlite3 *sdb = impl->sdb;
+	sqlite3_stmt* stmt;
+	if (sqlite3_prepare_v2(sdb, _PH_IMPORTED_FILE(setup_sql), &stmt, NULL) != SQLITE_OK)
+	{	
+		
+	}
+	
+	return true;
+}
 
 bool
 ph_database_open(ph_database_t *db, char const *location)
@@ -40,12 +53,16 @@ ph_database_open(ph_database_t *db, char const *location)
 		goto err;
 	}
 	
+	_setup_database(db->_impl);
+	
 	return true;
 err:
 	//db->_impl->sdb = NULL;
 	ph_database_close(db);
 	return false;
 }
+
+
 
 void
 ph_database_close(ph_database_t *db)
