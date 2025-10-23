@@ -9,7 +9,7 @@ main()
 {
 	char buf[512] = {0};
 	struct ph_repo repo = {
-		.directory = "/var/db/repos/local"
+		.directory = "/var/db/repos/gentoo"
 	};
 	struct ph_repo_ctx ctx = { &repo };
 	
