@@ -40,10 +40,10 @@ int
 ph_use_deps_parse(char *atomstr, ph_atom_use_deps_t *dep)
 {
 #define USE_END_SANITY_CHECK(_var) if (!*_var && *_var != ',' && *_var != ']' && *_var != '(') goto err;
-	char *tmp;
+	char *tmp = NULL;
 	assert(*atomstr == '[');
 	struct ph_atom_use_dep *depl = NULL;
-	bool err;
+	bool err = 0;
 	
 	*atomstr = '\0';
 	++atomstr;
