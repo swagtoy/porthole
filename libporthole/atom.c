@@ -170,6 +170,7 @@ ph_atom_parse_string(char const *atomstr, ph_atom_t *atom, ph_atom_parse_opts_t 
 				goto err;
 			}
 			++repotmp;
+			atom->repository = repotmp;
 		}
 	}
 	
@@ -244,7 +245,6 @@ ph_atom_parse_string(char const *atomstr, ph_atom_t *atom, ph_atom_parse_opts_t 
 	if ((tmp = strrchr(work, ':')))
 	{
 		is_slot = true;
-		atom->repository = NULL;
 			
 		// Note: we may have already searched for tmp, so we can still assume it's a slot
 		// But we do need to find the end 

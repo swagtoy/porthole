@@ -40,6 +40,18 @@ t_dependency_parsing()
 	assert(ph_atom_parse_string(">=cat/pkg-1.0.0v_alpha2_beta3-rc-1:slot/sub=[!usedep?]::gentoo", &atom, opts) != 0);
 	assert(ph_atom_parse_string(">=cat/pkg-1.0.0v_alpha2_beta3-r3:slot/sub::gentoo[!usedep?]", &atom, opts) == 0);
 	assert(ph_atom_parse_string(">=cat/pkg-1.0.0v_alpha2_beta3-r3:slot/sub=[!usedep?]::gentoo", &atom, opts) != 0);
+	
+	// Test alternative syntax
+	opts |= PH_ATOM_PARSE_REPO_AFTER_USEDEP;
+	
+	puts("--- TESTING ALTERNATIVE SYNTAX ---");
+	
+	assert(ph_atom_parse_string("something/package-1.0:3.0::gentoo[-be,buz,-bu]", &atom, opts) != 0);
+	assert(ph_atom_parse_string(">=media-video/knobgoblin-1.3.4.0a_alpha_beta3_p_p20244040_alpha-r3:0/b::wow[!knobbed?,-test(+)?,foogbaab]", &atom, opts) != 0);
+	
+	// Now lets see if those work
+	assert(ph_atom_parse_string("something/package-1.0:3.0[-be,buz,-bu]::definitelygentoo", &atom, opts) == 0);
+	_atom_debug_print(&atom);
 }
 
 int
