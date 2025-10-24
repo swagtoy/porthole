@@ -25,7 +25,7 @@ _setup_database(struct _ph_database_impl *impl)
 	sqlite3_stmt* stmt;
 	if (sqlite3_prepare_v2(sdb, _PH_IMPORTED_FILE(setup_sql), &stmt, NULL) != SQLITE_OK)
 	{	
-		
+		DEBUGF("error when preparing: %s\n", sqlite3_errmsg(impl->sdb));
 	}
 	
 	return true;

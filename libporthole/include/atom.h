@@ -33,9 +33,17 @@ struct ph_atom
 typedef struct ph_atom ph_atom_t;
 typedef uint8_t ph_atom_parse_opts_t;
 
-/// If set, ph_atom_parse_string will also parse 
-#define PH_ATOM_PARSE_DEPENDENCY (1<<0)
+/// If set, ph_atom_parse_string will also parse use dependencies
+#define PH_ATOM_PARSE_DEPENDENCY 1
+/// If set, ph_atom_parse_string will strip .ebuild from the end
 #define PH_ATOM_PARSE_STRIP_EBUILD (1<<1)
+/// If set, ph_atom_parse_string will not bother with ::repo (likely error)
+#define PH_ATOM_PARSE_NO_REPO (1<<2)
+/// If set, ph_atom_parse_string will only parse ::repo after usedeps (i.e. [one?]::repo)
+#define PH_ATOM_PARSE_REPO_AFTER_USEDEP (1<<3)
+/// If set, ph_atom_parse_string will align with the PMS
+#define PH_ATOM_PARSE_PMS_CORRECT \
+	(PH_ATOM_PARSE_DEPENDENCY | PH_ATOM_PARSE_NO_REPO | PH_ATOM_PARSE_DEPENDENCY)
 
 _LIBPH_PUBLIC int ph_atom_parse_string(char const *atomstr, ph_atom_t *atom, ph_atom_parse_opts_t opts);
 _LIBPH_PUBLIC bool ph_atom_str_is_valid(char *atomstr);

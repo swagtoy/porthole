@@ -31,7 +31,7 @@ _parse_cmp(char const *cmp)
 	case '\0': return PH_CMP_UNDEF;
 	case '>':
 		switch (cmp[1])
-		{	
+		{
 		case '\0': return PH_CMP_BAD;
 		case '=':  return PH_CMP_GE;
 		default:   return PH_CMP_GT;
@@ -132,8 +132,9 @@ ph_atom_parse_string(char const *atomstr, ph_atom_t *atom, ph_atom_parse_opts_t 
 {
 	char *tmp,
 	     *deptmp,
-		 *work = NULL; /* we need to free/set storage later at a whim,
+		 *work = NULL, /* we need to free/set storage later at a whim,
 		                * so this is our working var */
+	     *repotmp;
 	char *storage = NULL;
 	char *category = NULL;
 	bool err = false;
@@ -156,6 +157,22 @@ ph_atom_parse_string(char const *atomstr, ph_atom_t *atom, ph_atom_parse_opts_t 
 	// dont want to clobber the old string, so we'll work on this one
 	storage = work = str_new_from_cstr(atomstr);
 	
+	// find repotmp, for example if _REPO_AFTER_USEDEP is set and use deps are parsed, it will get missed
+	if ((repotmp = strrchr(storage, ':')))
+	{
+		if (repotmp[-1] != ':')
+			repotmp = NULL;
+		else {
+			// sanity check
+			if (repotmp[-2] == ']' &&
+				(opts & PH_ATOM_PARSE_REPO_AFTER_USEDEP) != PH_ATOM_PARSE_REPO_AFTER_USEDEP)
+			{
+				goto err;
+			}
+			++repotmp;
+		}
+	}
+	
 	/* but before our string gets clobbered with null terminators,
 	 *   let's go ahead and look at '['. */
 	if ((deptmp = strchr(work, '[')))
@@ -171,6 +188,9 @@ ph_atom_parse_string(char const *atomstr, ph_atom_t *atom, ph_atom_parse_opts_t 
 	else
 		memset(&atom->use_deps, 0, sizeof(struct ph_atom_use_deps));
 	
+	// if that was parsed, it would set [ to \0
+	
+	// Now, parse the actual category
 	if ((tmp = _category_strchr(work, '/', &err)))
 	{
 		char *slotchr = strchr(work, ':');
@@ -198,6 +218,7 @@ ph_atom_parse_string(char const *atomstr, ph_atom_t *atom, ph_atom_parse_opts_t 
 	if ((opts & PH_ATOM_PARSE_STRIP_EBUILD) == PH_ATOM_PARSE_STRIP_EBUILD &&
 	    (tmp = strstr(work, ".ebuild")))
 	{
+		// TODO ensure .ebuild at end
 		*tmp = '\0';
 	}
 	
@@ -209,43 +230,45 @@ ph_atom_parse_string(char const *atomstr, ph_atom_t *atom, ph_atom_parse_opts_t 
 	// later, we'll null terminate it
 	atom->pkgname = work;
 	
+	// before checking for slot, let's set our null terminator based on the options
+	if ((opts & PH_ATOM_PARSE_REPO_AFTER_USEDEP) == PH_ATOM_PARSE_REPO_AFTER_USEDEP)
+	{
+		// do nothing, ph_use_deps_parse already did this
+	}
+	else if (repotmp) {
+		repotmp[-2] = '\0';
+	}
+	
 	// check for repo name
 	bool is_slot = false;
-	if ((tmp = strrchr(work, ':')) && tmp[-1] == ':' && tmp[1])
+	/* if (repotmp && tmp[1]) */
+	/* { */
+	/* 	// TODO: validate repository name */
+	/* 	// repository is the last thing (i think), so no need to null terminate */
+	/* 	atom->repository = repotmp; */
+		
+	/* 	// next, let's look for a slot! */
+	/* 	// tmp is at a repo divider, so let's go back */
+	/* 	tmp[-1] = '\0'; // since we know the slot is (probably) behind us, we can set this */
+	/* 	tmp = strrchr(work, ':'); */
+		
+	/* 	if (tmp && tmp[-1] != ':') */
+	/* 		is_slot = true; */
+	/* } */
+	/* else { */
+	if ((tmp = strrchr(work, ':')))
 	{
-		// TODO: validate repository name
-		// repository is the last thing (i think), so no need to null terminate
-		atom->repository = tmp + 1;
-		
-		// next, let's look for a slot!
-		// tmp is at a repo divider, so let's go back
-		tmp[-1] = '\0'; // since we know the slot is (probably) behind us, we can set this
-		tmp = strrchr(work, ':');
-		
-		if (tmp && tmp[-1] != ':')
-			is_slot = true;
-	}
-	else {
+		is_slot = true;
 		atom->repository = NULL;
-		is_slot = tmp;
-		
+			
 		// Note: we may have already searched for tmp, so we can still assume it's a slot
 		// But we do need to find the end 
-		if (tmp)
+		DEBUGF("searching for slot at %s\n", tmp + 1);
+		for (char *c = tmp + 1; *c; ++c)
 		{
-			DEBUGF("repo check failed, searching for slot at %s\n", tmp);
-			for (char *c = tmp; *c; ++c)
+			if (!(COMMON_CHAR_CHECK(*c) || *c == '.' || *c == '/'	))
 			{
-				if (!(COMMON_CHAR_CHECK(*c) || *c == '.' || *c == '/'	))
-				{
-					if (*c == ':')
-					{
-						*c = '\0';
-						break;
-					}
-					else
-						is_slot = false;
-				}
+				is_slot = false;
 			}
 		}
 	}
