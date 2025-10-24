@@ -241,21 +241,6 @@ ph_atom_parse_string(char const *atomstr, ph_atom_t *atom, ph_atom_parse_opts_t 
 	
 	// check for repo name
 	bool is_slot = false;
-	/* if (repotmp && tmp[1]) */
-	/* { */
-	/* 	// TODO: validate repository name */
-	/* 	// repository is the last thing (i think), so no need to null terminate */
-	/* 	atom->repository = repotmp; */
-		
-	/* 	// next, let's look for a slot! */
-	/* 	// tmp is at a repo divider, so let's go back */
-	/* 	tmp[-1] = '\0'; // since we know the slot is (probably) behind us, we can set this */
-	/* 	tmp = strrchr(work, ':'); */
-		
-	/* 	if (tmp && tmp[-1] != ':') */
-	/* 		is_slot = true; */
-	/* } */
-	/* else { */
 	if ((tmp = strrchr(work, ':')))
 	{
 		is_slot = true;
@@ -266,7 +251,7 @@ ph_atom_parse_string(char const *atomstr, ph_atom_t *atom, ph_atom_parse_opts_t 
 		DEBUGF("searching for slot at %s\n", tmp + 1);
 		for (char *c = tmp + 1; *c; ++c)
 		{
-			if (!(COMMON_CHAR_CHECK(*c) || *c == '.' || *c == '/'	))
+			if (!(COMMON_CHAR_CHECK(*c) || *c == '.' || *c == '/'))
 			{
 				is_slot = false;
 			}
