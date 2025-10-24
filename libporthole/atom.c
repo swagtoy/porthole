@@ -121,11 +121,9 @@ bool ph_atom_pkgname_is_valid(char *pkgname)
 	return true;
 }
 
-/* pretty big TODO's
+/* TODO's
  * -> validate more stuff
- * -> validate category names (need a strchr alternative)
- * -> validate package names (without using ph_atom_pkgname_is_valid)
- * -> test out versioning better
+ * -> make sure vars are cleared better (maybe just do this at start?)
  */
 int
 ph_atom_parse_string(char const *atomstr, ph_atom_t *atom, ph_atom_parse_opts_t opts)

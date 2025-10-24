@@ -151,7 +151,7 @@ ph_use_deps_parse(char *atomstr, ph_atom_use_deps_t *dep)
 	
 	DEBUGF("after ]: %s\n", tmp + 1);
 	// these USE flags should be the very last thing we parse
-	if (tmp[1] != '\0')
+	if (tmp[1] != '\0' && tmp[1] != ':')
 		goto err;
 	
 	dep->deps = depl;

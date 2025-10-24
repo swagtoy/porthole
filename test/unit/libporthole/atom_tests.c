@@ -52,6 +52,7 @@ t_dependency_parsing()
 	// Now lets see if those work
 	assert(ph_atom_parse_string("something/package-1.0:3.0[-be,buz,-bu]::definitelygentoo", &atom, opts) == 0);
 	_atom_debug_print(&atom);
+	assert(ph_atom_parse_string("something/package-1.0:3.0[-be,buz,-bu]i:definitelygentoo", &atom, opts) != 0);
 }
 
 int
