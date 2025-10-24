@@ -159,7 +159,10 @@ ph_atom_parse_string(char const *atomstr, ph_atom_t *atom, ph_atom_parse_opts_t 
 	if ((repotmp = strrchr(storage, ':')))
 	{
 		if (repotmp[-1] != ':')
+		{
 			repotmp = NULL;
+			atom->repository = NULL;
+		}
 		else {
 			// sanity check
 			if (repotmp[-2] == ']' &&
@@ -171,6 +174,8 @@ ph_atom_parse_string(char const *atomstr, ph_atom_t *atom, ph_atom_parse_opts_t 
 			atom->repository = repotmp;
 		}
 	}
+	else
+		atom->repository = NULL;
 	
 	/* but before our string gets clobbered with null terminators,
 	 *   let's go ahead and look at '['. */
