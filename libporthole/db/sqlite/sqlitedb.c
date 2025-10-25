@@ -18,30 +18,49 @@ struct _ph_database_impl
 	sqlite3 *sdb;
 };
 
-bool
-_setup_database(struct _ph_database_impl *impl)
+int
+_sqlite_simple_exec(ph_database_t *db,
+                    char const *sql,
+					int nbytes)
 {
+	struct _ph_database_impl *impl = db->_impl;
 	sqlite3 *sdb = impl->sdb;
 	sqlite3_stmt* stmt = NULL;
 	int ret;
-	if (sqlite3_prepare_v2(sdb, _PH_IMPORTED_FILE(setup_sql), &stmt, NULL) != SQLITE_OK)
-	{	
-		DEBUGF("error when preparing: %s\n", sqlite3_errmsg(impl->sdb));
-		goto err;
+	if ((ret = sqlite3_prepare_v2(sdb, sql, nbytes, &stmt, NULL)) != SQLITE_OK)
+	{
+		db->error = strdup(sqlite3_errmsg(impl->sdb));
+		DEBUGF("error when preparing: %s\n", db->error);
+		return ret;
 	}
 	
 	while ((ret = sqlite3_step(stmt)) != SQLITE_DONE)
 		if (ret == SQLITE_ERROR)
 		{
-			DEBUGF("sqlite error: %s\n", sqlite3_errmsg(impl->sdb));
+			db->error = strdup(sqlite3_errmsg(impl->sdb));
+			DEBUGF("sqlite error: %s\n", db->error);
 			goto err;
 		}
 	
-	
-	return true;
+	db->error = NULL;
 err:
 	sqlite3_finalize(stmt);
-	return false;
+	return ret;
+}
+
+bool
+_setup_database(ph_database_t *db)
+{
+	struct _ph_database_impl *impl = db->_impl;
+	sqlite3 *sdb = impl->sdb;
+	
+	if (_sqlite_simple_exec(db, _PH_IMPORTED_FILE(setup_sql)) != SQLITE_DONE)
+	{
+		DEBUG("Setting up database failed!\n");
+		return false;
+	}
+	
+	return true;
 }
 
 bool
@@ -66,7 +85,7 @@ ph_database_open(ph_database_t *db, char const *location)
 		goto err;
 	}
 	
-	_setup_database(db->_impl);
+	_setup_database(db);
 	
 	return true;
 err:
@@ -84,6 +103,7 @@ ph_database_close(ph_database_t *db)
 	if (db->_impl)
 		sqlite3_close(db->_impl->sdb);
 	free(db->_impl);
+	free(db->error);
 	db->_impl      = NULL;
 	db->path       = NULL;
 }

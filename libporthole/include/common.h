@@ -11,8 +11,10 @@
  */
 #	include <stdio.h>
 #	define DEBUGF(msg, ...) printf( "DBG:" __FILE__ ":%d: " msg, __LINE__, __VA_ARGS__)
+#	define DEBUG(msg)       fputs(msg, stdout);
 #else
 #	define DEBUGF(msg, ...) ;
+#	define DEBUG(msg)       fputs(msg, stdout);
 #endif
 
 #define _PH_IMPORTED_FILE(x) (char*)___libporthole_data_##x, ___libporthole_data_##x##_len
