@@ -1,3 +1,5 @@
+// Fur d_type
+#define _DEFAULT_SOURCE
 #include <assert.h>
 #include <stdio.h>
 #include <limits.h>
@@ -90,6 +92,7 @@ ph_repo_context_next(struct ph_repo_ctx *ctx)
 		{
 		case CTX_CATEGORY:
 			// TODO thorough checking
+			// TODO: Use stat?
 			if (ent->d_type == DT_DIR &&
 			    strcmp(ent->d_name, "profiles") != 0 &&
 			    strcmp(ent->d_name, "scripts")  != 0 &&
