@@ -22,13 +22,26 @@ bool
 _setup_database(struct _ph_database_impl *impl)
 {
 	sqlite3 *sdb = impl->sdb;
-	sqlite3_stmt* stmt;
+	sqlite3_stmt* stmt = NULL;
+	int ret;
 	if (sqlite3_prepare_v2(sdb, _PH_IMPORTED_FILE(setup_sql), &stmt, NULL) != SQLITE_OK)
 	{	
 		DEBUGF("error when preparing: %s\n", sqlite3_errmsg(impl->sdb));
+		goto err;
 	}
 	
+	while ((ret = sqlite3_step(stmt)) != SQLITE_DONE)
+		if (ret == SQLITE_ERROR)
+		{
+			DEBUGF("sqlite error: %s\n", sqlite3_errmsg(impl->sdb));
+			goto err;
+		}
+	
+	
 	return true;
+err:
+	sqlite3_finalize(stmt);
+	return false;
 }
 
 bool
