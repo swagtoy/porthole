@@ -19,7 +19,6 @@ typedef struct ph_database ph_database_t;
 /// Creates or opens the database if it doesn't exist
 _LIBPH_PUBLIC bool ph_database_open(ph_database_t *db, char const *location);
 _LIBPH_PUBLIC char *ph_database_get_error(ph_database_t *db);
-_LIBPH_PUBLIC char *ph_database_get_error_point(ph_database_t *db);
 _LIBPH_PUBLIC void ph_database_close(ph_database_t *db);
 
 #endif

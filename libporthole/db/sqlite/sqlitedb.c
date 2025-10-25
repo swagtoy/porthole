@@ -94,7 +94,12 @@ err:
 	return false;
 }
 
-
+char *
+ph_database_get_error(ph_database_t *db)
+{
+	if (!db) return NULL;
+	return db->error;
+}
 
 void
 ph_database_close(ph_database_t *db)
