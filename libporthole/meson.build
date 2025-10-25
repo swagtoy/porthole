@@ -5,9 +5,9 @@ sources = files('''
 	use.c
 	repo.c
 '''.split())
+subdir('data')
 subdir('util')
 subdir('db')
-subdir('data')
 
 # See `config.h.in' for the definitions these map to.
 conf_h = configuration_data()
@@ -19,10 +19,10 @@ configure_file(input: 'config.h.in',
                output: 'libporthole_config.h',
                configuration: conf_h)
 
-libporthole_include = include_directories('include', '.')
+libporthole_include = include_directories('include', '.', 'data')
 libporthole = library(
 	'porthole',
-	sources,
+	[sqlgen, sources],
 	install: true,
 	dependencies: libporthole_deps,
 	include_directories: libporthole_include,
