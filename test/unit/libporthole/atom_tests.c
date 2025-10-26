@@ -40,6 +40,7 @@ t_dependency_parsing()
 	assert(ph_atom_parse_string(">=cat/pkg-1.0.0v_alpha2_beta3-rc-1:slot/sub=[!usedep?]::gentoo", &atom, opts) != 0);
 	assert(ph_atom_parse_string(">=cat/pkg-1.0.0v_alpha2_beta3-r3:slot/sub::gentoo[!usedep?]", &atom, opts) == 0);
 	assert(ph_atom_parse_string(">=cat/pkg-1.0.0v_alpha2_beta3-r3:slot/sub=[!usedep?]::gentoo", &atom, opts) != 0);
+	assert(ph_atom_parse_string("!! >=cat/pkg-1.0.0v_alpha2_beta3-r3:slot/sub=[!usedep?]::gentoo", &atom, opts) != 0);
 	
 	// Test alternative syntax
 	opts |= PH_ATOM_PARSE_REPO_AFTER_USEDEP;

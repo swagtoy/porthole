@@ -13,38 +13,77 @@
 
 #define _DB_FILENAME "phcache.db"
 
+enum _stmt_id
+{
+	STMT_CREATE_TABLES,
+	STMT_LEN,
+};
+
 struct _ph_database_impl
 {
 	sqlite3 *sdb;
+	sqlite3_stmt *cached_stmts[STMT_LEN];
 };
+
+int
+_sqlite_prepare_cached(ph_database_t *db,
+                       enum _stmt_id id,
+					   char const *sql,
+					   int nbytes,
+					   sqlite3_stmt **stmt,
+					   char const **pzTail)
+{
+	struct _ph_database_impl *impl = db->_impl;
+	sqlite3_stmt *cached_stmt;
+	if ((cached_stmt = impl->cached_stmts[id]) != NULL)
+	{
+		sqlite3_reset(cached_stmt);
+		*stmt = cached_stmt;
+		return SQLITE_OK;
+	}
+	
+	int ret = sqlite3_prepare_v2(impl->sdb, sql, nbytes, impl->cached_stmts + id, pzTail);
+	*stmt = impl->cached_stmts[id];
+	return ret;
+}
+
+int
+_sqlite_simple_step_through(ph_database_t *db, sqlite3_stmt *stmt)
+{
+	int ret;
+	struct _ph_database_impl *impl = db->_impl;
+	while ((ret = sqlite3_step(stmt)) != SQLITE_DONE)
+		if (ret == SQLITE_ERROR)
+		{
+			db->error = strdup(sqlite3_errmsg(impl->sdb));
+			DEBUGF("sqlite error while stepping through: %s\n", db->error);
+			return ret;
+		}
+	
+	db->error = NULL;
+	return ret;
+}
 
 int
 _sqlite_simple_exec(ph_database_t *db,
                     char const *sql,
-					int nbytes)
+                    int nbytes)
 {
 	struct _ph_database_impl *impl = db->_impl;
 	sqlite3 *sdb = impl->sdb;
 	sqlite3_stmt* stmt = NULL;
 	int ret;
-	if ((ret = sqlite3_prepare_v2(sdb, sql, nbytes, &stmt, NULL)) != SQLITE_OK)
+	if ((ret = _sqlite_prepare_cached(
+	        db, STMT_CREATE_TABLES, sql, nbytes, &stmt, NULL)) != SQLITE_OK)
 	{
 		db->error = strdup(sqlite3_errmsg(impl->sdb));
 		DEBUGF("error when preparing: %s\n", db->error);
 		return ret;
 	}
 	
-	while ((ret = sqlite3_step(stmt)) != SQLITE_DONE)
-		if (ret == SQLITE_ERROR)
-		{
-			db->error = strdup(sqlite3_errmsg(impl->sdb));
-			DEBUGF("sqlite error: %s\n", db->error);
-			goto err;
-		}
+	if ((ret = _sqlite_simple_step_through(db, stmt)) != SQLITE_DONE)
+		return ret;
 	
-	db->error = NULL;
-err:
-	sqlite3_finalize(stmt);
 	return ret;
 }
 
@@ -76,7 +115,7 @@ ph_database_open(ph_database_t *db, char const *location)
 		db->path = strdup(location);
 	snprintf(path, PATH_MAX-1, "%s/" _DB_FILENAME, location);
 	
-	db->_impl = malloc(sizeof(struct _ph_database_impl));
+	db->_impl = calloc(1, sizeof(struct _ph_database_impl));
 	
 	DEBUGF("db path: %s\n", path);
 	if (sqlite3_open(path, &db->_impl->sdb) != SQLITE_OK)
@@ -106,7 +145,11 @@ ph_database_close(ph_database_t *db)
 {
 	free(db->path);
 	if (db->_impl)
+	{
+		for (unsigned i = 0; i < STMT_LEN; ++i)
+			sqlite3_finalize(db->_impl->cached_stmts[i]);
 		sqlite3_close(db->_impl->sdb);
+	}
 	free(db->_impl);
 	free(db->error);
 	db->_impl      = NULL;
