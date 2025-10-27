@@ -3,6 +3,7 @@
 #include <repo.h>
 #include "_debug_prints.h"
 #include "atom.h"
+#include "database.h"
 #include <sys/types.h>
 #include <dirent.h>
 
@@ -15,6 +16,11 @@ main()
 	char path[2048] = { 0 };
 	DIR *root = opendir(ROOT);
 	DIR *cat, *pkg;
+	
+	ph_database_t db;
+	ph_database_open(&db, NULL);
+	
+	ph_database_begin_transaction(&db);
 
 	struct dirent *ent, *ent2;
 	while ((ent = readdir(root)))
@@ -25,12 +31,22 @@ main()
 		{
 			// parse ebuild filename now!
 			ph_atom_t atom;
-			char *atomstr;
 			ph_atom_parse_string(ent2->d_name, &atom, PH_ATOM_PARSE_STRIP_EBUILD);
+			struct ph_db_ecache record = {
+				.cat = ent->d_name,
+				.pkg = atom.pkgname,
+				.ver = atom.version.version,
+				.repo = atom.repository,
+			};
+			ph_database_add_pkg(&db, &record);
 		}
 		closedir(cat);
 	}
 	closedir(root);
+	
+	ph_database_commit(&db);
+	
+	ph_database_close(&db);
 	
 	return 0;
 }

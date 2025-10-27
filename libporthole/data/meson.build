@@ -1,8 +1,15 @@
-sqls = [ 'setup.sql' ]
+sqls = '''
+	setup.sql
+	add_pkg.sql
+'''.split()
 
-sqlgen = custom_target(
-	'generated',
-	input:   sqls,
-	output:  '@PLAINNAME@.h',
-	command: [find_program('xxd'), '-i', '@INPUT@'],
-	capture: true)
+sqlgen = []
+
+foreach f : sqls
+	sqlgen += custom_target(
+	    f'generated-@f@',
+	    input:   f,
+	    output:  '@PLAINNAME@.h',
+	    command: [find_program('xxd'), '-i', '@INPUT@'],
+	    capture: true)
+endforeach

@@ -1,4 +1,6 @@
+#include <assert.h>
 #include <sqlite3.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,12 +12,16 @@
 #include "database.h"
 #include "common.h"
 #include "data/setup.sql.h"
+#include "data/add_pkg.sql.h"
 
 #define _DB_FILENAME "phcache.db"
 
 enum _stmt_id
 {
+	STMT_BEGIN_TRANSACTION,
+	STMT_COMMIT,
 	STMT_CREATE_TABLES,
+	STMT_INSERT_PKG,
 	STMT_LEN,
 };
 
@@ -24,6 +30,51 @@ struct _ph_database_impl
 	sqlite3 *sdb;
 	sqlite3_stmt *cached_stmts[STMT_LEN];
 };
+
+struct _bind_span
+{
+	enum _bind_span_type {
+		_BIND_UNSET,
+		_BIND_NULL,
+		_BIND_INT,
+		_BIND_INT64,
+		_BIND_DOUBLE,
+		_BIND_TEXT,
+	} t;
+	union {
+		char     *t;
+		int       i;
+		uint64_t  i64;
+		double    d;
+	} d;
+};
+
+int
+_sqlite_span_bind(sqlite3_stmt *stmt, struct _bind_span *spans, int len)
+{
+	for (; len > 0; --len)
+	{
+		struct _bind_span *span = spans + len - 1;
+		switch (span->t)
+		{
+		case _BIND_UNSET:
+			break;
+		case _BIND_NULL:
+			sqlite3_bind_null  (stmt, len); break;
+		case _BIND_INT:
+			sqlite3_bind_int   (stmt, len, span->d.i); break;
+		case _BIND_INT64:
+			sqlite3_bind_int64 (stmt, len, span->d.i64); break;
+		case _BIND_DOUBLE:
+			sqlite3_bind_double(stmt, len, span->d.d); break;
+		case _BIND_TEXT:
+			sqlite3_bind_text  (stmt, len, span->d.t, -1, NULL); break;
+		default:
+			assert(!"Unhandled bind!");
+		}
+	}
+	return SQLITE_OK;
+}
 
 int
 _sqlite_prepare_cached(ph_database_t *db,
@@ -66,15 +117,15 @@ _sqlite_simple_step_through(ph_database_t *db, sqlite3_stmt *stmt)
 
 int
 _sqlite_simple_exec(ph_database_t *db,
+                    enum _stmt_id id,
                     char const *sql,
                     int nbytes)
 {
 	struct _ph_database_impl *impl = db->_impl;
-	sqlite3 *sdb = impl->sdb;
 	sqlite3_stmt* stmt = NULL;
 	int ret;
 	if ((ret = _sqlite_prepare_cached(
-	        db, STMT_CREATE_TABLES, sql, nbytes, &stmt, NULL)) != SQLITE_OK)
+	        db, id, sql, nbytes, &stmt, NULL)) != SQLITE_OK)
 	{
 		db->error = strdup(sqlite3_errmsg(impl->sdb));
 		DEBUGF("error when preparing: %s\n", db->error);
@@ -90,10 +141,7 @@ _sqlite_simple_exec(ph_database_t *db,
 bool
 _setup_database(ph_database_t *db)
 {
-	struct _ph_database_impl *impl = db->_impl;
-	sqlite3 *sdb = impl->sdb;
-	
-	if (_sqlite_simple_exec(db, _PH_IMPORTED_FILE(setup_sql)) != SQLITE_DONE)
+	if (_sqlite_simple_exec(db, STMT_CREATE_TABLES, _PH_IMPORTED_FILE(setup_sql)) != SQLITE_DONE)
 	{
 		DEBUG("Setting up database failed!\n");
 		return false;
@@ -131,6 +179,69 @@ err:
 	//db->_impl->sdb = NULL;
 	ph_database_close(db);
 	return false;
+}
+
+void
+ph_database_begin_transaction(ph_database_t *db)
+{
+#define SQL "BEGIN TRANSACTION;"
+	if (_sqlite_simple_exec(db, STMT_BEGIN_TRANSACTION, SQL, sizeof(SQL)-1) != SQLITE_DONE)
+	{
+		DEBUGF("BEGIN TRANSACTION failed! %s\n", sqlite3_errmsg(db->_impl->sdb));
+	}
+#undef SQL
+}
+
+void
+ph_database_commit(ph_database_t *db)
+{
+#define SQL "COMMIT;"
+	if (_sqlite_simple_exec(db, STMT_COMMIT, SQL, sizeof(SQL)-1) != SQLITE_DONE)
+	{
+		DEBUG("Commit failed!\n");
+	}
+#undef SQL
+}
+
+bool
+ph_database_add_pkg(ph_database_t *db, struct ph_db_ecache *data)
+{
+	struct _ph_database_impl *impl = db->_impl;
+	sqlite3_stmt* stmt = NULL;
+	int ret;
+	if ((ret = _sqlite_prepare_cached(
+	        db, STMT_INSERT_PKG, _PH_IMPORTED_FILE(add_pkg_sql), &stmt, NULL)) != SQLITE_OK)
+	{
+		db->error = strdup(sqlite3_errmsg(impl->sdb));
+		DEBUGF("error when preparing: %s\n", db->error);
+		return false;
+	}
+	
+	struct _bind_span binds[] = {
+		{ _BIND_TEXT, {.t = data->cat} }, // cat
+		{ _BIND_TEXT, {.t = data->pkg} }, // pkg
+		{ _BIND_TEXT, {.t = data->ver} }, // ver
+		{ _BIND_TEXT, {.t = data->repo} }, // repo
+		{ _BIND_INT,  {.i = data->EAPI} }, // EAPI
+		{ _BIND_TEXT, {.t = data->DESCRIPTION} }, // DESCRIPTION
+		{ _BIND_TEXT, {.t = data->BDEPEND} }, // BDEPEND
+		{ _BIND_TEXT, {.t = data->HOMEPAGE} }, // HOMEPAGE
+		{ _BIND_TEXT, {.t = data->IDEPEND} }, // IDEPEND
+		{ _BIND_TEXT, {.t = data->INHERIT} }, // INHERIT
+		{ _BIND_TEXT, {.t = data->IUSE} }, // IUSE
+		{ _BIND_TEXT, {.t = data->KEYWORDS} }, // KEYWORDS
+		{ _BIND_TEXT, {.t = data->LICENSE} }, // LICENSE
+		{ _BIND_TEXT, {.t = data->RDEPEND} }, // RDEPEND
+		{ _BIND_TEXT, {.t = data->REQUIRED_USE} }, // REQUIRED_USE
+		{ _BIND_TEXT, {.t = data->RESTRICT} }, // RESTRICT
+		{ _BIND_TEXT, {.t = data->SLOT} }, // SLOT
+		{ _BIND_TEXT, {.t = data->SRC_URI} }, // SRC_URI
+	};
+	_sqlite_span_bind(stmt, binds, (sizeof(binds)/sizeof(binds[0])));
+	
+	_sqlite_simple_step_through(db, stmt);
+	
+	return true;
 }
 
 char *
