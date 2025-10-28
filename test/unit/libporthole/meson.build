@@ -5,6 +5,7 @@ tests = [
 	[ 'Validation tests', 'validation_tests', 'validation_tests.c' ],
 	[ 'Atom tests',       'atom_tests',       'atom_tests.c' ],
 	[ 'Database tests',   'database_tests',   'database_tests.c' ],
+	[ 'Ebuild proc test', 'ebuild_proc_test', 'ebuild_proc_test.c' ],
 #	[ 'Common test',      'common_test',      'common_test.c' ],
 	[ 'repos/Everything test', 'repo_everything_test', 'repo_everything_test.c' ],
 	[ 'repos/md5 cache', 'repo_md5_cache_test', 'repo_md5_cache_test.c' ],

@@ -4,6 +4,8 @@ sources = files('''
 	version.c
 	use.c
 	repo.c
+	ebuild.c
+	dbcommon.c
 '''.split())
 subdir('data')
 subdir('util')

@@ -32,7 +32,7 @@ main()
 			// parse ebuild filename now!
 			ph_atom_t atom;
 			ph_atom_parse_string(ent2->d_name, &atom, PH_ATOM_PARSE_STRIP_EBUILD);
-			struct ph_db_ecache record = {
+			struct ph_common_ecache record = {
 				.cat = ent->d_name,
 				.pkg = atom.pkgname,
 				.ver = atom.version.version,

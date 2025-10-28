@@ -7,7 +7,7 @@ main()
 	ph_database_t db;
 	ph_database_open(&db, NULL);
 	
-	struct ph_db_ecache record = {
+	struct ph_common_ecache record = {
 		.cat = "hello",
 		.pkg = "hi",
 		.ver = "1.0",

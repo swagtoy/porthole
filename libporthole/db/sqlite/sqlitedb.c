@@ -204,7 +204,7 @@ ph_database_commit(ph_database_t *db)
 }
 
 bool
-ph_database_add_pkg(ph_database_t *db, struct ph_db_ecache *data)
+ph_database_add_pkg(ph_database_t *db, struct ph_common_ecache *data)
 {
 	struct _ph_database_impl *impl = db->_impl;
 	sqlite3_stmt* stmt = NULL;
