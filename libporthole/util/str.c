@@ -3,6 +3,8 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#define _XOPEN_SOURCE 500
+#include <string.h>
 #include "str.h"
 
 #define STRING_GUTS_MAGIC 0xFEB14

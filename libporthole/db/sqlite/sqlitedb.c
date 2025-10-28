@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#define _XOPEN_SOURCE 500
 #include <string.h>
 #include <limits.h>
 #ifndef PATH_MAX
