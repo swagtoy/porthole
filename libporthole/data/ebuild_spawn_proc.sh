@@ -24,8 +24,23 @@ while read -r line; do
 	RESTRICT="${RESTRICT//$'\n'/ }"
 	SLOT="${SLOT//$'\n'/ }"
 	SRC_URI="${SRC_URI//$'\n'/ }"
-	#printf "Processing: $ROOT/$line\ntest\n\nhello"
-	printf "${EAPI}\n${DESCRIPTION}\n${BDEPEND}\n${HOMEPAGE}\n${IDEPEND}\n${INHERIT}\n${IUSE}\n${KEYWORDS}\n${LICENSE}\n${RDEPEND}\n${REQUIRED_USE}\n${RESTRICT}\n${SLOT}\n${SRC_URI}\0"
+
+	echo "${EAPI}"
+	echo "${DESCRIPTION}"
+	echo "${BDEPEND}"
+	echo "${HOMEPAGE}"
+	echo "${IDEPEND}"
+	echo "${INHERIT}"
+	echo "${IUSE}"
+	echo "${KEYWORDS}"
+	echo "${LICENSE}"
+	echo "${RDEPEND}"
+	echo "${REQUIRED_USE}"
+	echo "${RESTRICT}"
+	echo "${SLOT}"
+	echo -n "${SRC_URI}"
+	printf "\0"
+	#printf "${EAPI}\n${DESCRIPTION}\n${BDEPEND}\n${HOMEPAGE}\n${IDEPEND}\n${INHERIT}\n${IUSE}\n${KEYWORDS}\n${LICENSE}\n${RDEPEND}\n${REQUIRED_USE}\n${RESTRICT}\n${SLOT}\n${SRC_URI}\0"
 done
 
 exit 1

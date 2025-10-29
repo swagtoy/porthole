@@ -62,6 +62,10 @@ ph_ebuild_proc_push_ebuild(struct ph_ebuild_proc *proc, char *cat, char *pkg, ch
 	       pkglen = strlen(pkg),
 	       ebuildlen = strlen(ebuild);
 	
+	char *tmp;
+	if ((tmp = strstr(ebuild, ".ebuild")) && tmp[sizeof(".ebuild")-1] == '\0')
+		ebuildlen -= sizeof(".ebuild")-1;
+	
 	//DEBUGF("cat: %s\npkg: %s\nebuild: %s.ebuild\n", cat, pkg, ebuild); 
 	write(impl->pipein[1], cat, catlen);
 	write(impl->pipein[1], "/", 1);
@@ -77,7 +81,10 @@ ph_ebuild_proc_push_ebuild(struct ph_ebuild_proc *proc, char *cat, char *pkg, ch
 bool
 ph_ebuild_proc_read_ecache_vars(struct ph_ebuild_proc *proc, struct ph_common_ecache *data)
 {
-	memset(data, 0, sizeof(struct ph_common_ecache));
+	// Ugly, but just for now
+	data->INHERIT = data->IUSE = data->KEYWORDS = data->LICENSE = data->RDEPEND =
+		data->REQUIRED_USE = data->RESTRICT = data->SLOT = data->SRC_URI =
+		data->IDEPEND = data->HOMEPAGE = data->BDEPEND = data->DESCRIPTION = NULL;
 	data->alloc_bit = 1;
 	const int MAX_LINES = 13;
 	struct _ph_ebuild_proc_impl *impl = proc->_impl;
