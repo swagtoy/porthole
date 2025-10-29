@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <sys/wait.h>
+#include <stdio.h>
 #include <unistd.h>
 #include "ebuild.h"
 #include "ebuild_spawn_proc.sh.h"
