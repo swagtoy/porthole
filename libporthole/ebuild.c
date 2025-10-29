@@ -16,7 +16,7 @@ struct _ph_ebuild_proc_impl
 {
 	// store
 	char *store;
-	char *work;
+	int store_idx;
 	// process
 	pid_t proc;
 	posix_spawn_file_actions_t actions;
@@ -80,14 +80,19 @@ ph_ebuild_proc_read_ecache_vars(struct ph_ebuild_proc *proc, struct ph_common_ec
 	data->alloc_bit = 1;
 	const int MAX_LINES = 13;
 	struct _ph_ebuild_proc_impl *impl = proc->_impl;
+	// Store will persist in the case that read oversteps its boundaries.
 	if (!impl->store)
+	{
 		impl->store = str_new();
+		impl->store_idx = 0;
+	}
 	char buf[BUFSIZ] =  { 0 };
 	int sz;
 	bool breakout = false;
 	while ((sz = read(impl->pipeout[0], buf, BUFSIZ-1)) > 0)
 	{
 		//DEBUGF("buf[BUFSIZ,%d]: %s\n", sz, buf);
+		// search for null terminator
 		for (int i = 0; i < sz; ++i)
 		{
 			if (buf[i] == '\0')
@@ -97,12 +102,12 @@ ph_ebuild_proc_read_ecache_vars(struct ph_ebuild_proc *proc, struct ph_common_ec
 			}
 		}
 		
-		buf[sz] = '\0';
+		buf[sz] = '\0'; //hack for str.h
 		str_cappend(&impl->store, buf);
 		if (breakout)
 			break;
 	}
-	impl->work = impl->store;
+	//DEBUGF("BEGIN impl->work\n%s\nEND impl->work\n", impl->work + impl->store_idx);
 
 	// TODO: str.h needs a step amount, what we are doing is probably
 	// slow if the malloc impl is bad enough
@@ -111,14 +116,14 @@ ph_ebuild_proc_read_ecache_vars(struct ph_ebuild_proc *proc, struct ph_common_ec
 	{
 		// TODO: use one string and separate it?
 		char *tmp = NULL;
-		for (; *impl->work && *impl->work != '\n'; ++impl->work)
+		for (; impl->store[impl->store_idx] && impl->store[impl->store_idx] != '\n'; ++impl->store_idx)
 		{
 			if (tmp == NULL)
 				tmp = str_new();
-			str_chappend(&tmp, *impl->work);
+			str_chappend(&tmp, impl->store[impl->store_idx]);
 		}
-		if (*impl->work == '\n')
-			++impl->work;
+		//if (impl->store[impl->store_idx] == '\n')
+			++impl->store_idx;
 		
 #define STR_CASE(i, x) case i: x = tmp; if (x) DEBUGF(#x ": %s\n", x); break;
 		switch (line)
@@ -143,7 +148,6 @@ ph_ebuild_proc_read_ecache_vars(struct ph_ebuild_proc *proc, struct ph_common_ec
 			assert(!"Line too much!");
 		}
 	}
-	
 
 	return false;
 }
@@ -163,8 +167,12 @@ ph_ebuild_proc_wait(struct ph_ebuild_proc *proc)
 bool
 ph_ebuild_proc_stop(struct ph_ebuild_proc *proc)
 {
+	str_free(proc->_impl->store);
+	// Signal a formal exit
 	write(proc->_impl->pipein[1], "<<<byebye!>>>\n", 15);
+	// NOTE: Could this be free'd earlier?
 	posix_spawn_file_actions_destroy(&proc->_impl->actions);
+	// Cleanup pipes (will also exit)
 	close(proc->_impl->pipein[0]);
 	close(proc->_impl->pipein[1]);
 	close(proc->_impl->pipeout[0]);

@@ -1,6 +1,10 @@
 #!/bin/bash
 ROOT=$0
 
+function inherit() {
+	:;
+}
+
 while read -r line; do
 	if [[ "$line" = "<<<byebye!>>>" ]]; then
 		echo "bye bye ;-/"
