@@ -68,7 +68,7 @@ ph_ebuild_proc_push_ebuild(struct ph_ebuild_proc *proc, char *cat, char *pkg, ch
 	if ((tmp = strstr(ebuild, ".ebuild")) && tmp[sizeof(".ebuild")-1] == '\0')
 		ebuildlen -= sizeof(".ebuild")-1;
 	
-	//DEBUGF("cat: %s\npkg: %s\nebuild: %s.ebuild\n", cat, pkg, ebuild); 
+	DEBUGF("cat: %s\npkg: %s\nebuild: %s.ebuild\n", cat, pkg, ebuild); 
 	write(impl->pipein[1], cat, catlen);
 	write(impl->pipein[1], "/", 1);
 	write(impl->pipein[1], pkg, pkglen);
@@ -99,10 +99,13 @@ ph_ebuild_proc_read_ecache_vars(struct ph_ebuild_proc *proc, struct ph_common_ec
 	char buf[BUFSIZ] =  { 0 };
 	int sz;
 	bool loop_through = false, break_out = false;;
+	
+	//DEBUGF("\n========== BEGIN impl->work\n%s\n========== END impl->work\n", impl->store + impl->store_idx);
 	// Check if there is a "complete" package ready to read
+	DEBUGF("len: %ld | %d\n", str_length(impl->store), impl->store_idx);
 	for (int i = impl->store_idx; i < str_length(impl->store) - impl->store_idx; ++i)
 	{
-		if (buf[i] == '\0')
+		if (impl->store[i] == '\0')
 		{
 			DEBUG("STOP. Hit a null terminator!\n");
 			loop_through = true;
@@ -111,7 +114,7 @@ ph_ebuild_proc_read_ecache_vars(struct ph_ebuild_proc *proc, struct ph_common_ec
 	}
 	if (!loop_through)
 	{
-		while ((sz = read(impl->pipeout[0], buf, BUFSIZ-1)) > 0)
+		while ((sz = read(impl->pipeout[0], buf, BUFSIZ)) > 0)
 		{
 			// So we don't read on a block
 			for (int i = 0; i < sz; ++i)
@@ -119,20 +122,18 @@ ph_ebuild_proc_read_ecache_vars(struct ph_ebuild_proc *proc, struct ph_common_ec
 				{
 					DEBUG("STOP. Hit a null terminator!\n");
 					break_out = true;
+					break;
 				}
 			//DEBUGF("buf[BUFSIZ,%d]: %s\n", sz, buf);
-			// search for null terminator
-
-			//buf[sz] = '\0'; //hack for str.h
+			
 			str_clappend(&impl->store, buf, sz);
 			if (break_out)
 				break;
 		}
 	}
-	//DEBUGF("BEGIN impl->work\n%s\nEND impl->work\n", impl->work + impl->store_idx);
 
 	// TODO: str.h needs a step amount, what we are doing is probably
-	// slow if the malloc impl is bad enough
+	//   slow if the malloc impl is bad enough
 	
 	for (int line = 0; line < MAX_LINES + 1; ++line)
 	{
@@ -170,12 +171,19 @@ ph_ebuild_proc_read_ecache_vars(struct ph_ebuild_proc *proc, struct ph_common_ec
 		}
 	}
 	
-	// we sometimes read past a character, hold back... this can break the next read
+
+	// Check if we overread by looking back
+	if (impl->store[impl->store_idx-2] == '\0')
+		--impl->store_idx;
+#if 0
+	// This was the old approach, but i don't think it works because
+	// we'd sometimes overread
 	if (impl->store_idx - 1 == str_length(impl->store))
 		--impl->store_idx;
-	//if (impl->store[impl->store_idx] == '\0')
-	//	++impl->store_idx;
+#endif
 
+	//DEBUGF("\n========== BEGIN impl->work\n%s\n========== END impl->work\n", impl->store + impl->store_idx);
+	
 	return false;
 }
 
