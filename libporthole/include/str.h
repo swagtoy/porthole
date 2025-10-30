@@ -44,7 +44,7 @@ _LIBPH_PUBLIC char *str_new_from_cstr(char const *cstr);
 _LIBPH_PUBLIC size_t str_length(char *str);
 
 _LIBPH_PUBLIC int str_subs(char **str, char **result, int offset, int len);
-
+_LIBPH_PUBLIC void str_clinsert(char **str, char const *other, int len, int index);
 _LIBPH_PUBLIC void str_cinsert(char **str, char const *other, int index);
 
 _LIBPH_PUBLIC void str_remove_at(char **str, int offset, int len);
@@ -52,6 +52,7 @@ _LIBPH_PUBLIC void str_remove_at(char **str, int offset, int len);
 _LIBPH_PUBLIC bool str_cremove(char **str, char const *other);
 
 _LIBPH_PUBLIC void str_cappend(char **str, char const *data);
+_LIBPH_PUBLIC void str_clappend(char **str, char const *data, size_t len);
 _LIBPH_PUBLIC void str_chappend(char **str, char data);
 
 _LIBPH_PUBLIC char *str_release(char *str);
