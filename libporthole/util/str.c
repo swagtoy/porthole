@@ -71,7 +71,7 @@ str_length(char *str)
 	return _get_str_guts(str)->length;
 }
 
-static void
+void
 str_clinsert(char **str, char const *other, int len, int index)
 {
 	assert(other != NULL);
@@ -119,6 +119,12 @@ void
 str_cinsert(char **str, char const *other, int index)
 {
 	str_clinsert(str, other, strlen(other), index);
+}
+
+void
+str_clappend(char **str, char const *data, size_t len)
+{
+	str_clinsert(str, data, len, -1);
 }
 
 void
