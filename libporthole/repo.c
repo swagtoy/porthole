@@ -139,6 +139,7 @@ ph_repo_context_close(struct ph_repo_ctx *ctx)
 	
 	closedir(impl->dir);
 	free(impl);
+	ctx->_impl = NULL;
 }
 
 void
