@@ -103,7 +103,8 @@ ph_ebuild_proc_read_ecache_vars(struct ph_ebuild_proc *proc, struct ph_common_ec
 	//DEBUGF("\n========== BEGIN impl->work\n%s\n========== END impl->work\n", impl->store + impl->store_idx);
 	// Check if there is a "complete" package ready to read
 	DEBUGF("len: %ld | %d\n", str_length(impl->store), impl->store_idx);
-	for (int i = impl->store_idx; i < str_length(impl->store) - impl->store_idx; ++i)
+	// Read everything but the final null terminator
+	for (int i = impl->store_idx; i < str_length(impl->store); ++i)
 	{
 		if (impl->store[i] == '\0')
 		{
