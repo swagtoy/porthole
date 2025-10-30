@@ -16,12 +16,16 @@ struct _ph_ebuild_proc_impl;
 
 struct ph_ebuild_proc
 {
+	/// User data pointer
+	void *data;
+	/// Interal struct, do not touch.
 	struct _ph_ebuild_proc_impl *_impl;
 };
 
 _LIBPH_PUBLIC bool ph_ebuild_proc_spawn(struct ph_ebuild_proc *proc, char const *repo);
 _LIBPH_PUBLIC bool ph_ebuild_proc_push_ebuild(struct ph_ebuild_proc *proc, char *cat, char *pkg, char *ebuild);
 _LIBPH_PUBLIC bool ph_ebuild_proc_read_ecache_vars(struct ph_ebuild_proc *proc, struct ph_common_ecache *data);
+_LIBPH_PUBLIC bool ph_ebuild_proc_data_is_ready(struct ph_ebuild_proc *proc);
 _LIBPH_PUBLIC void ph_ebuild_proc_wait(struct ph_ebuild_proc *proc);
 _LIBPH_PUBLIC bool ph_ebuild_proc_stop(struct ph_ebuild_proc *proc);
 

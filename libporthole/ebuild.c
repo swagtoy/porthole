@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <poll.h>
 #include <spawn.h>
 #include <string.h>
 #include <sys/types.h>
@@ -42,6 +43,7 @@ ph_ebuild_proc_spawn(struct ph_ebuild_proc *proc, char const *repo)
 	
 	posix_spawn_file_actions_adddup2(&impl->actions, impl->pipein[0], STDIN_FILENO);
 	posix_spawn_file_actions_adddup2(&impl->actions, impl->pipeout[1], STDOUT_FILENO);
+	posix_spawn_file_actions_addclose(&impl->actions, STDERR_FILENO); // shut up (for now)
 	//posix_spawn_file_actions_addclose(&impl->actions, impl->pipein[0]);
 	//posix_spawn_file_actions_addclose(&impl->actions, impl->pipeout[1]);
 	
@@ -96,24 +98,36 @@ ph_ebuild_proc_read_ecache_vars(struct ph_ebuild_proc *proc, struct ph_common_ec
 	}
 	char buf[BUFSIZ] =  { 0 };
 	int sz;
-	bool breakout = false;
-	while ((sz = read(impl->pipeout[0], buf, BUFSIZ-1)) > 0)
+	bool loop_through = false, break_out = false;;
+	// Check if there is a "complete" package ready to read
+	for (int i = impl->store_idx; i < str_length(impl->store) - impl->store_idx; ++i)
 	{
-		//DEBUGF("buf[BUFSIZ,%d]: %s\n", sz, buf);
-		// search for null terminator
-		for (int i = 0; i < sz; ++i)
+		if (buf[i] == '\0')
 		{
-			if (buf[i] == '\0')
-			{
-				DEBUG("STOP. Hit a null terminator!\n");
-				breakout = true;
-			}
-		}
-		
-		buf[sz] = '\0'; //hack for str.h
-		str_cappend(&impl->store, buf);
-		if (breakout)
+			DEBUG("STOP. Hit a null terminator!\n");
+			loop_through = true;
 			break;
+		}
+	}
+	if (!loop_through)
+	{
+		while ((sz = read(impl->pipeout[0], buf, BUFSIZ-1)) > 0)
+		{
+			// So we don't read on a block
+			for (int i = 0; i < sz; ++i)
+				if (buf[i] == '\0')
+				{
+					DEBUG("STOP. Hit a null terminator!\n");
+					break_out = true;
+				}
+			//DEBUGF("buf[BUFSIZ,%d]: %s\n", sz, buf);
+			// search for null terminator
+
+			//buf[sz] = '\0'; //hack for str.h
+			str_clappend(&impl->store, buf, sz);
+			if (break_out)
+				break;
+		}
 	}
 	//DEBUGF("BEGIN impl->work\n%s\nEND impl->work\n", impl->work + impl->store_idx);
 
@@ -130,8 +144,7 @@ ph_ebuild_proc_read_ecache_vars(struct ph_ebuild_proc *proc, struct ph_common_ec
 				tmp = str_new();
 			str_chappend(&tmp, impl->store[impl->store_idx]);
 		}
-		//if (impl->store[impl->store_idx] == '\n')
-			++impl->store_idx;
+		++impl->store_idx;
 		
 #define STR_CASE(i, x) case i: x = tmp; if (x) DEBUGF(#x ": %s\n", x); break;
 		switch (line)
@@ -156,8 +169,24 @@ ph_ebuild_proc_read_ecache_vars(struct ph_ebuild_proc *proc, struct ph_common_ec
 			assert(!"Line too much!");
 		}
 	}
+	
+	// we sometimes read past a character, hold back... this can break the next read
+	if (impl->store_idx - 1 == str_length(impl->store))
+		--impl->store_idx;
+	//if (impl->store[impl->store_idx] == '\0')
+	//	++impl->store_idx;
 
 	return false;
+}
+
+bool
+ph_ebuild_proc_data_is_ready(struct ph_ebuild_proc *proc)
+{
+	struct pollfd pfd;
+	pfd.fd = proc->_impl->pipeout[0];
+	pfd.events = POLLIN;
+	int res = poll(&pfd, 1, 0);
+	return (res > 0 && (pfd.revents & POLLIN));
 }
 
 void
