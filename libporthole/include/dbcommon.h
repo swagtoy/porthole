@@ -9,7 +9,7 @@
 struct ph_common_ecache
 {
 	unsigned long id;
-	char *cat, *pkg, *ver, *repo;
+	char const *cat, *pkg, *ver, *repo;
 	
 	unsigned long EAPI;
 	char *DESCRIPTION, *BDEPEND, *HOMEPAGE,

@@ -1,0 +1,198 @@
+// Licensed under the BSD 3-Clause License
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include "cache_spawner.h"
+#include "atom.h"
+#include "database.h"
+#include "ebuild.h"
+#include "repo.h"
+#include "str.h"
+
+struct _phcache_item
+{
+	ph_atom_t atom;
+	struct _phcache_item *next;
+};
+
+struct _phcache_proc_data
+{
+	struct _phcache_item *list;
+	struct _phcache_item *last;
+	size_t len;
+	size_t total;
+};
+
+static unsigned long count = 0;
+
+static struct _phcache_item *
+_phcache_list_push(struct _phcache_proc_data *data)
+{
+	struct _phcache_item *res;
+	++data->len;
+	if (data->list == NULL)
+		data->list = res = calloc(1, sizeof(struct _phcache_item));
+	else
+	{
+		data->last->next = res = calloc(1, sizeof(struct _phcache_item));
+	}
+	
+	data->last = res;
+	return res;
+}
+
+static void
+_phcache_list_remove(struct _phcache_proc_data *data)
+{
+	// We specifically assert this case because it should never happen
+	assert(data->list != NULL);
+	
+	// free it
+	struct _phcache_item *it = data->list;
+	ph_atom_free(&it->atom);
+	data->list = it->next;
+	--data->len;
+	free(it);
+}
+
+void
+_flush_pending_results(ph_database_t *db, struct ph_ebuild_proc *proc, char const *repo)
+{
+	int n = 0;
+	struct _phcache_proc_data *data = proc->data;
+
+	while (data->len != 0)
+	{
+		while (ph_ebuild_proc_data_is_ready(proc))
+		{
+			// first item (next result)
+			struct _phcache_item *item = data->list;
+
+			struct ph_common_ecache record = {
+				.cat = item->atom.category,
+				.pkg = item->atom.pkgname,
+				.ver = item->atom.version.version,
+				.repo = repo,
+			};
+
+			ph_ebuild_proc_read_ecache_vars(proc, &record);
+			ph_database_add_pkg(db, &record);
+			_phcache_list_remove(data);
+			++count;
+			++n;
+		}
+	}
+	
+	if (n > data->total)
+		data->total = n;
+}
+
+bool
+phcache_gen_cache(char const *repo_arg, long jobs)
+{
+	if (strlen(repo_arg) == 0)
+		return false;
+	char buf[1024] = {0};
+	char *repopath = str_new_from_cstr("/var/db/repos/");
+	str_cappend(&repopath, repo_arg);
+	struct ph_repo repo = { .directory = repopath };
+	
+	struct ph_repo_ctx ctx = { &repo }, ctx2 = { &repo }, ctx3 = { &repo };
+	char *cat, *pkg, *ebuild;
+	
+	size_t curr_proc_idx = 0;
+	// create processes
+	struct ph_ebuild_proc *procs = calloc(1, sizeof(struct ph_ebuild_proc) * jobs);
+	for (long i = 0; i < jobs; ++i)
+	{
+		procs[i].data = calloc(1, sizeof(struct _phcache_proc_data));
+		ph_ebuild_proc_spawn(procs + i, repopath);
+	}
+	
+	ph_database_t db;
+	ph_database_open(&db, NULL);
+	ph_database_begin_transaction(&db);
+	
+	// categories
+	ph_repo_context_category_open(&ctx);
+	while ((cat = ph_repo_context_next(&ctx)))
+	{
+		// packages
+		ph_repo_context_catpkg_open(&ctx2, cat);
+		while ((pkg = ph_repo_context_next(&ctx2)))
+		{
+			// ebuilds
+			ph_repo_context_pkg_open(&ctx3, cat, pkg);
+			while ((ebuild = ph_repo_context_next(&ctx3)))
+			{
+				// HACK to not strdup category a billion times
+				//  well, it also validates the category for us, so...
+				snprintf(buf, 1023, "%s/%s", cat, ebuild); 
+				struct ph_ebuild_proc *proc = procs + curr_proc_idx;
+				struct _phcache_proc_data *data = proc->data;
+				
+				/* Flush out all data after a while, otherwise, the
+				 *   piece of shit known as 'bash' will shit itself
+				 *   when there is too much data on stdin. I don't
+				 *   know what bash is doing but it will slow down to
+				 *   a crawl or even appear to genuinely freeze if too
+				 *   much data is on stdin. The initial design I
+				 *   wanted for this was to just fill up bashes stdin
+				 *   until write starts to block, then bash would do
+				 *   its job and we'd move on with our lives, but
+				 *   sadly that won't be the case. */
+				if (data->len > 30)
+				{
+					DEBUG("Flushing...\n");
+					_flush_pending_results(&db, proc, repo_arg);
+				}
+				
+				struct _phcache_item *item = _phcache_list_push(data);
+
+				if (ph_atom_parse_string(buf, &item->atom, PH_ATOM_PARSE_STRIP_EBUILD) != 0)
+				{
+					fprintf(stderr, "Couldn't parse ebuild: %s\n", ebuild);
+					continue;
+				}
+
+				ph_ebuild_proc_push_ebuild(proc, cat, pkg, ebuild);
+				
+				//if (ph_ebuild_proc_data_is_ready(proc))			
+				// switch to next proc
+				curr_proc_idx = (curr_proc_idx + 1 >= jobs) ? (0) : (curr_proc_idx + 1);
+			}
+			ph_repo_context_close(&ctx3);
+		}
+		ph_repo_context_close(&ctx2);
+	}
+	ph_repo_context_close(&ctx);
+outer:
+
+	for (int i = 0; i < jobs; ++i)
+	{
+		struct _phcache_proc_data *data = procs[i].data;
+		_flush_pending_results(&db, procs + i, repo_arg);
+		DEBUGF("Packages left: %ld\n", data->len);
+	}
+	
+	printf("Cached %ld packages!\n", count);
+	puts("---- stats ----");
+	for (int i = 0; i < jobs; ++i)
+	{
+		struct _phcache_proc_data *data = procs[i].data;
+		printf("Thread %d: %ld ebuilds\n", i+1, data->total);
+	}
+	
+	
+	ph_database_commit(&db);
+	
+out:
+	for (long i = 0; i < jobs; ++i)
+	{
+		free(procs[i].data);
+		ph_ebuild_proc_stop(procs + i);
+	}
+	str_free(repopath);
+	return true;
+}

@@ -1,16 +1,13 @@
 #!/bin/bash
 ROOT=$0
 
-function inherit() {
-	:;
-}
-
 while read -r line; do
 	if [[ "$line" = "<<<byebye!>>>" ]]; then
-		echo "bye bye ;-/"
+		# echo "bye bye ;-/"
 		exit 0
 	fi
-	source "$ROOT/$line"
+	source "${ROOT}/${line}.ebuild" 2> /dev/null
+
 	DESCRIPTION="${DESCRIPTION//$'\n'/ }"
 	BDEPEND="${BDEPEND//$'\n'/ }"
 	HOMEPAGE="${HOMEPAGE//$'\n'/ }"

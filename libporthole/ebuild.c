@@ -1,3 +1,4 @@
+// Licensed under the BSD 3-Clause License
 #include <assert.h>
 #include <poll.h>
 #include <spawn.h>
@@ -13,6 +14,8 @@
 #ifdef EXTRA_DEBUG
 #	include <errno.h>
 #endif
+
+// This is the worst fucking code in this project
 
 struct _ph_ebuild_proc_impl
 {
@@ -43,7 +46,7 @@ ph_ebuild_proc_spawn(struct ph_ebuild_proc *proc, char const *repo)
 	
 	posix_spawn_file_actions_adddup2(&impl->actions, impl->pipein[0], STDIN_FILENO);
 	posix_spawn_file_actions_adddup2(&impl->actions, impl->pipeout[1], STDOUT_FILENO);
-	posix_spawn_file_actions_addclose(&impl->actions, STDERR_FILENO); // shut up (for now)
+	//posix_spawn_file_actions_addclose(&impl->actions, STDERR_FILENO); // shut up (for now)
 	//posix_spawn_file_actions_addclose(&impl->actions, impl->pipein[0]);
 	//posix_spawn_file_actions_addclose(&impl->actions, impl->pipeout[1]);
 	
@@ -59,6 +62,7 @@ ph_ebuild_proc_spawn(struct ph_ebuild_proc *proc, char const *repo)
 bool
 ph_ebuild_proc_push_ebuild(struct ph_ebuild_proc *proc, char *cat, char *pkg, char *ebuild)
 {
+	//char buf[1024] = { 0 };
 	struct _ph_ebuild_proc_impl *impl = proc->_impl;
 	size_t catlen = strlen(cat),
 	       pkglen = strlen(pkg),
@@ -68,13 +72,14 @@ ph_ebuild_proc_push_ebuild(struct ph_ebuild_proc *proc, char *cat, char *pkg, ch
 	if ((tmp = strstr(ebuild, ".ebuild")) && tmp[sizeof(".ebuild")-1] == '\0')
 		ebuildlen -= sizeof(".ebuild")-1;
 	
-	DEBUGF("cat: %s\npkg: %s\nebuild: %s.ebuild\n", cat, pkg, ebuild); 
+	DEBUGF("cat: %s\npkg: %s\nebuild: %s.ebuild\n", cat, pkg, ebuild);
+	//int s = snprintf(buf, 1023, "%s/%s/%s\n", cat, pkg, ebuild);
+	//write(impl->pipein[1], buf, s);
 	write(impl->pipein[1], cat, catlen);
 	write(impl->pipein[1], "/", 1);
 	write(impl->pipein[1], pkg, pkglen);
 	write(impl->pipein[1], "/", 1);
 	write(impl->pipein[1], ebuild, ebuildlen);
-	write(impl->pipein[1], ".ebuild", sizeof(".ebuild")-1);
 	write(impl->pipein[1], "\n", 1);
 	
 	return true;
@@ -191,6 +196,19 @@ ph_ebuild_proc_read_ecache_vars(struct ph_ebuild_proc *proc, struct ph_common_ec
 bool
 ph_ebuild_proc_data_is_ready(struct ph_ebuild_proc *proc)
 {
+	// First check if we have any data we need to read
+	struct _ph_ebuild_proc_impl *impl = proc->_impl;
+	if (impl && impl->store)
+		for (int i = impl->store_idx; i < str_length(impl->store); ++i)
+		{
+			if (impl->store[i] == '\0')
+			{
+				DEBUG("FOUND a null terminator!\n");
+				return true;
+			}
+		}
+	
+	// Otherwise, see if we need to read
 	struct pollfd pfd;
 	pfd.fd = proc->_impl->pipeout[0];
 	pfd.events = POLLIN;

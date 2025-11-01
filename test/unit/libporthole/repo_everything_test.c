@@ -17,14 +17,14 @@ main()
 	char *cat;
 	while ((cat = ph_repo_context_next(&ctx)))
 	{
-		printf("CAT: %s\n", cat);
+		//printf("CAT: %s\n", cat);
 		
 		struct ph_repo_ctx ctx2 = { &repo };
 		char *pkg;
 		ph_repo_context_catpkg_open(&ctx2, cat);
 		while ((pkg = ph_repo_context_next(&ctx2)))
 		{
-			printf("     | %s\n", pkg);
+			//printf("     | %s\n", pkg);
 			
 			struct ph_repo_ctx ctx3 = { &repo, 0 };
 			char *ebuild;
@@ -37,7 +37,7 @@ main()
 				char *atomstr;
 #if 1
 				assert(ph_atom_parse_string(buf, &atom, PH_ATOM_PARSE_STRIP_EBUILD) == 0);
-				atomstr = ph_atom_to_string(&atom);
+				//atomstr = ph_atom_to_string(&atom);
 #else
 				// I have some ebuilds named stuff like -TODO.ebuild so this would break there
 				if (ph_atom_parse_string(buf, &atom, PH_ATOM_PARSE_STRIP_EBUILD) != 0)
@@ -49,8 +49,8 @@ main()
 					atomstr = ph_atom_to_string(&atom);
 #endif
 
-				printf("     |-- %s\n", atomstr);
-				if (atomstr != ebuild) free(atomstr);
+				//printf("     |-- %s\n", atomstr);
+				//if (atomstr != ebuild) free(atomstr);
 			}
 			ph_repo_context_close(&ctx3);
 		}
