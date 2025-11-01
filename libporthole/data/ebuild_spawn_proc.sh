@@ -6,7 +6,7 @@ while read -r line; do
 		# echo "bye bye ;-/"
 		exit 0
 	fi
-	source "${ROOT}/${line}.ebuild" 2> /dev/null
+	source "${ROOT}/${line}.ebuild"
 
 	DESCRIPTION="${DESCRIPTION//$'\n'/ }"
 	BDEPEND="${BDEPEND//$'\n'/ }"

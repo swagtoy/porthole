@@ -46,7 +46,7 @@ ph_ebuild_proc_spawn(struct ph_ebuild_proc *proc, char const *repo)
 	
 	posix_spawn_file_actions_adddup2(&impl->actions, impl->pipein[0], STDIN_FILENO);
 	posix_spawn_file_actions_adddup2(&impl->actions, impl->pipeout[1], STDOUT_FILENO);
-	//posix_spawn_file_actions_addclose(&impl->actions, STDERR_FILENO); // shut up (for now)
+	posix_spawn_file_actions_addclose(&impl->actions, STDERR_FILENO); // shut up (for now)
 	//posix_spawn_file_actions_addclose(&impl->actions, impl->pipein[0]);
 	//posix_spawn_file_actions_addclose(&impl->actions, impl->pipeout[1]);
 	

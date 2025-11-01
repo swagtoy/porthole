@@ -30,7 +30,6 @@ main(int argc, char **argv)
 		switch (opt)
 		{
 		case 'u':
-			printf("Updating database...\n");
 			update_database = true;
 			break;
 		case 'r':
