@@ -1,10 +1,10 @@
+#define _XOPEN_SOURCE 500
+#include <string.h>
 #include <assert.h>
 #include <sqlite3.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#define _XOPEN_SOURCE 500
-#include <string.h>
 #include <limits.h>
 #ifndef PATH_MAX
 #	warning "No PATH_MAX detected, using a hardcoded guestimate of 2048"
@@ -43,10 +43,10 @@ struct _bind_span
 		_BIND_TEXT,
 	} t;
 	union {
-		char     *t;
-		int       i;
-		uint64_t  i64;
-		double    d;
+		char const *t;
+		int         i;
+		uint64_t    i64;
+		double      d;
 	} d;
 };
 

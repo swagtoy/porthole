@@ -1,10 +1,9 @@
 // Licensed under the BSD 3-Clause License
-	
+#define _XOPEN_SOURCE 800
+#include <string.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#define _XOPEN_SOURCE 500
-#include <string.h>
 #include "str.h"
 
 #define STRING_GUTS_MAGIC 0xFEB14
