@@ -54,13 +54,10 @@ main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 	
-	if (update_database)
+	if (!phcache_gen_cache(update_database, repo, jobs))
 	{
-		if (!phcache_gen_cache(repo, jobs))
-		{
-			fprintf(stderr, "Failed to generate cache for repository \"%s\".\n", repo);
-			return EXIT_FAILURE;
-		}
+		fprintf(stderr, "Failed to generate cache for repository \"%s\".\n", repo);
+		return EXIT_FAILURE;
 	}
 	
 	return EXIT_SUCCESS;

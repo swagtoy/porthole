@@ -10,7 +10,6 @@
 #include "repo.h"
 #include "str.h"
 
-
 /* We have to cap this, otherwise the piece of shit known as 'bash'
  *   will shit itself when there is too much data on stdin. I don't
  *   know what bash is doing but it will slow down to a crawl or even
@@ -21,6 +20,12 @@
  *   _work_loop to get an idea of what we do.
  */
 #define _MAX_EBUILDS (300)
+
+#define _SPINNER "/-\\|"
+//#define _SPINNER ".-^-"
+//#define _SPINNER "PPOORRTTHHOOLLEE!!"
+//#define _SPINNER "_.-^-."
+//#define _SPINNER "-=#="
 
 struct _phcache_item
 {
@@ -74,6 +79,23 @@ _next_job(long jobs)
 	curr_proc_idx = (curr_proc_idx + 1 >= jobs) ? (0) : (curr_proc_idx + 1);
 }
 
+int
+_tick_spinner()
+{
+	static int _i = 0;
+	if (_i >= sizeof(_SPINNER)-1)
+		_i = 0;
+	return _i++;
+}
+
+void
+_print_spinner()
+{
+	fputc('\b', stdout);
+	fputc(_SPINNER[_tick_spinner()], stdout);
+	fflush(stdout);
+}
+
 /* We want to avoid a situation where we sit on one process all day
  *   and forget to fill the others, so we essentially push an ebuild,
  *   but we don't actually read its results until we get N amount of
@@ -86,6 +108,7 @@ _next_job(long jobs)
 void
 _work_loop(ph_database_t *db,
            struct ph_ebuild_proc *procs,
+		   bool update,
            long jobs,
            char const *repo,
            char *pending_ebuild,
@@ -96,15 +119,17 @@ _work_loop(ph_database_t *db,
 	/* If pending_ebuild isn't set, assume we are done iterating
 	 * through everything and just cleanup
 	 */
-	// XXX: this is awful and it seems that it doesnt always end cleanly. Ouch
 	if (!pending_ebuild)
 	{
 		for (long i = 0; i < jobs; ++i)
 		{
-			struct ph_ebuild_proc *proc = procs + curr_proc_idx;
+			struct ph_ebuild_proc *proc = procs + i;
 			struct _phcache_proc_data *pdata = proc->data;
 			left += pdata->len;
 		}
+		assert(left >= 0);
+		if (left == 0)
+			return;
 	}
 	
 	while (true)
@@ -118,8 +143,27 @@ _work_loop(ph_database_t *db,
 			if (ph_atom_parse_string(pending_ebuild, &item->atom, PH_ATOM_PARSE_STRIP_EBUILD) != 0)
 			{
 				fprintf(stderr, "Couldn't parse ebuild: %s\n", pending_ebuild);
-				//continue;
+				_phcache_list_remove(pdata);
+				_next_job(jobs); // NOTE: is this needed?
+				break;
 			}
+			
+			// If we're updating, check if it exists in the db first
+			if (update && ph_database_pkg_exists(db, &item->atom))
+			{
+					if ((count % 500) == 0)
+					{
+						_print_spinner();
+					}
+					// TODO: not this
+					_phcache_list_remove(pdata);
+					_next_job(jobs); // NOTE: is this needed?
+					
+					if (!pending_ebuild && (--left <= 0))
+						return;
+					break;
+			}
+			
 			ph_ebuild_proc_push_ebuild(proc, item->atom.category, /* item->atom.pkgname */ pkg, ebuild);
 			
 			_next_job(jobs);
@@ -144,8 +188,7 @@ _work_loop(ph_database_t *db,
 			
 			if ((count % 500) == 0)
 			{
-				fputs(".", stdout);
-				fflush(stdout);
+				_print_spinner();
 			}
 			
 			// We aren't gonna break out yet, still have a pending ebuild to deal with
@@ -156,7 +199,7 @@ _work_loop(ph_database_t *db,
 }
 
 bool
-phcache_gen_cache(char const *repo_arg, long jobs)
+phcache_gen_cache(bool update, char const *repo_arg, long jobs)
 {
 	if (strlen(repo_arg) == 0)
 		return false;
@@ -180,7 +223,7 @@ phcache_gen_cache(char const *repo_arg, long jobs)
 	ph_database_open(&db, NULL);
 	ph_database_begin_transaction(&db);
 	
-	fputs("Updating database...", stdout);
+	fputs("Updating database...  |", stdout);
 	fflush(stdout);
 	
 	// categories
@@ -202,7 +245,7 @@ phcache_gen_cache(char const *repo_arg, long jobs)
 				// NOTE: is pkg needed here? i could've sworn that the
 				//   PMS said that it didnt need to match the folder,
 				//   but too lazy to check.
-				_work_loop(&db, procs, jobs, repo_arg, buf, pkg, ebuild);
+				_work_loop(&db, procs, update, jobs, repo_arg, buf, pkg, ebuild);
 				
 			}
 			ph_repo_context_close(&ctx3);
@@ -210,23 +253,16 @@ phcache_gen_cache(char const *repo_arg, long jobs)
 		ph_repo_context_close(&ctx2);
 	}
 	ph_repo_context_close(&ctx);
-outer:
 
-	/* for (int i = 0; i < jobs; ++i) */
-	/* { */
-	/* 	struct _phcache_proc_data *data = procs[i].data; */
-	/* 	_flush_pending_results(&db, procs + i, repo_arg); */
-	/* 	DEBUGF("Packages left: %ld\n", data->len); */
-	/* } */
-	
-	_work_loop(&db, procs, jobs, repo_arg, NULL, NULL, NULL);
+	_work_loop(&db, procs, update, jobs, repo_arg, NULL, NULL, NULL);
 	
 	puts("");
-	printf("Cached %ld packages!\n", count);
-	
 	ph_database_commit(&db);
+	if (count)
+		printf("Cached %ld package%s!\n", count, count > 1 ? "s" : "");
+	else
+		puts("Cache is already up to date.");
 	
-out:
 	for (long i = 0; i < jobs; ++i)
 	{
 		free(procs[i].data);
