@@ -2,6 +2,7 @@ sqls = '''
 	setup.sql
 	add_pkg.sql
 	ebuild_spawn_proc.sh
+	pkg_exists.sql
 '''.split()
 
 sqlgen = []

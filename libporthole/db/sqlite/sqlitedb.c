@@ -14,15 +14,28 @@
 #include "common.h"
 #include "data/setup.sql.h"
 #include "data/add_pkg.sql.h"
+#include "data/pkg_exists.sql.h"
 
 #define _DB_FILENAME "phcache.db"
 
+#define _STEP_CHECK_ERROR \
+	if (ret == SQLITE_ERROR) \
+	{ \
+		db->error = strdup(sqlite3_errmsg(impl->sdb)); \
+		DEBUGF("sqlite error while stepping through: %s\n", db->error); \
+		return ret; \
+	}
+
+#define _STEP_LOOP(var_ret, var_stmt) \
+	while ((var_ret = sqlite3_step(var_stmt)) != SQLITE_DONE)
+
 enum _stmt_id
 {
-	STMT_BEGIN_TRANSACTION,
+	STMT_NO_CACHE = 0,
+	STMT_BEGIN_TRANSACTION = 1,
 	STMT_COMMIT,
-	STMT_CREATE_TABLES,
 	STMT_INSERT_PKG,
+	STMT_CHECK_PKG,
 	STMT_LEN,
 };
 
@@ -104,18 +117,22 @@ _sqlite_simple_step_through(ph_database_t *db, sqlite3_stmt *stmt)
 {
 	int ret;
 	struct _ph_database_impl *impl = db->_impl;
-	while ((ret = sqlite3_step(stmt)) != SQLITE_DONE)
-		if (ret == SQLITE_ERROR)
-		{
-			db->error = strdup(sqlite3_errmsg(impl->sdb));
-			DEBUGF("sqlite error while stepping through: %s\n", db->error);
-			return ret;
-		}
+	
+	_STEP_LOOP(ret, stmt)
+	{
+		_STEP_CHECK_ERROR;
+	}
 	
 	db->error = NULL;
 	return ret;
 }
 
+/* we iterate through multiple statements if id is STMT_NO_CACHE,
+ *   otherwise it's cached so we only execute the statement once.
+ * 
+ * It's useful for stuff like setup.sql, where we don't need any values
+ *   read or bound, but we need to do stuff like create tables + index.
+ */
 int
 _sqlite_simple_exec(ph_database_t *db,
                     enum _stmt_id id,
@@ -123,26 +140,47 @@ _sqlite_simple_exec(ph_database_t *db,
                     int nbytes)
 {
 	struct _ph_database_impl *impl = db->_impl;
+	char const *tail = NULL;
 	sqlite3_stmt* stmt = NULL;
 	int ret;
-	if ((ret = _sqlite_prepare_cached(
-	        db, id, sql, nbytes, &stmt, NULL)) != SQLITE_OK)
+	do
 	{
-		db->error = strdup(sqlite3_errmsg(impl->sdb));
-		DEBUGF("error when preparing: %s\n", db->error);
-		return ret;
+		if (tail)
+		{
+			nbytes -= tail - sql;
+			assert(nbytes >= 0);
+			sql = tail;
+		}
+			
+		if (id == STMT_NO_CACHE)
+			ret = sqlite3_prepare_v2(impl->sdb, sql, nbytes, &stmt, &tail);
+		else
+			ret = _sqlite_prepare_cached(db, id, sql, nbytes, &stmt, NULL);
+
+		if (ret != SQLITE_OK)
+		{
+			db->error = strdup(sqlite3_errmsg(impl->sdb));
+			DEBUGF("error when preparing: %s\n", db->error);
+			return ret;
+		}
+		
+        if (!stmt)
+			continue;
+
+		ret = _sqlite_simple_step_through(db, stmt);
+        if (id == STMT_NO_CACHE)
+            sqlite3_finalize(stmt);
+		if (ret != SQLITE_DONE)
+			return ret;
 	}
-	
-	if ((ret = _sqlite_simple_step_through(db, stmt)) != SQLITE_DONE)
-		return ret;
-	
+	while (tail && *tail != '\0');
 	return ret;
 }
 
 bool
 _setup_database(ph_database_t *db)
 {
-	if (_sqlite_simple_exec(db, STMT_CREATE_TABLES, _PH_IMPORTED_FILE(setup_sql)) != SQLITE_DONE)
+	if (_sqlite_simple_exec(db, STMT_NO_CACHE, _PH_IMPORTED_FILE(setup_sql)) != SQLITE_DONE)
 	{
 		DEBUG("Setting up database failed!\n");
 		return false;
@@ -243,6 +281,44 @@ ph_database_add_pkg(ph_database_t *db, struct ph_common_ecache *data)
 	_sqlite_simple_step_through(db, stmt);
 	
 	return true;
+}
+
+bool
+ph_database_pkg_exists(ph_database_t *db, ph_atom_t *atom)
+{
+	struct _ph_database_impl *impl = db->_impl;
+	sqlite3_stmt* stmt = NULL;
+	int ret;
+	if ((ret = _sqlite_prepare_cached(
+	        db, STMT_CHECK_PKG, _PH_IMPORTED_FILE(pkg_exists_sql), &stmt, NULL)) != SQLITE_OK)
+	{
+		db->error = strdup(sqlite3_errmsg(impl->sdb));
+		DEBUGF("error when preparing: %s\n", db->error);
+		return false;
+	}
+	
+	struct _bind_span binds[] = {
+		{ _BIND_TEXT, {.t = atom->category} }, // cat
+		{ _BIND_TEXT, {.t = atom->pkgname} }, // pkg
+		//{ _BIND_TEXT, {.t = atom->ver} }, // ver
+		//{ _BIND_TEXT, {.t = atom->repository} }, // repo
+	};
+	_sqlite_span_bind(stmt, binds, (sizeof(binds)/sizeof(binds[0])));
+	
+	int value = false;
+	_STEP_LOOP(ret, stmt)
+	{
+		_STEP_CHECK_ERROR;
+		if (ret == SQLITE_ROW)
+		{
+			value = sqlite3_column_int(stmt, 0);
+			//value = true;
+			// TODO: assertion that this is the final result
+		}
+	}
+	
+	db->error = NULL;
+	return value;
 }
 
 char *

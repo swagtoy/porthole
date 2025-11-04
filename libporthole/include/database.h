@@ -4,6 +4,7 @@
 #define PORTHOLE_DATABASE_H
 
 #include <stdbool.h>
+#include "atom.h"
 #include "libporthole_config.h"
 #include "dbcommon.h"
 
@@ -26,6 +27,7 @@ _LIBPH_PUBLIC void ph_database_close(ph_database_t *db);
 _LIBPH_PUBLIC void ph_database_begin_transaction(ph_database_t *db);
 _LIBPH_PUBLIC void ph_database_commit(ph_database_t *db);
 _LIBPH_PUBLIC bool ph_database_add_pkg(ph_database_t *db, struct ph_common_ecache *data);
+_LIBPH_PUBLIC bool ph_database_pkg_exists(ph_database_t *db, ph_atom_t *atom);
 
 
 

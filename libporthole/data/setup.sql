@@ -21,3 +21,6 @@ CREATE TABLE IF NOT EXISTS ph_ecache (
 	SLOT TEXT,
 	SRC_URI TEXT
 );
+
+CREATE INDEX IF NOT EXISTS ph_ecache_lookup_idx
+ON ph_ecache (cat, pkg);
