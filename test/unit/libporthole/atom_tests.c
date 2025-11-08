@@ -65,7 +65,6 @@ int
 main()
 {
 	char line[1024];
-	int c;
 	FILE *file = fopen(TESTS_DIR "/atom_tests", "r");
 	assert(file);
 	int res;
@@ -85,6 +84,8 @@ main()
 			{
 			case '+': mode = '+'; break;
 			case '-': mode = '-'; break;
+			case '>': mode = '>'; break;
+			case '<': mode = '<'; break;
 			case 'p': print = true; break;
 			default: assert(!"Invalid character in atom_tests!");
 			}

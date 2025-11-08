@@ -54,6 +54,12 @@ ph_version_parse_string(char *verstr, ph_version_t *vers)
 	DEBUGF("stopped at: %c\n", *tmp);
 	if (islower(*tmp))
 	{
+		// prevent cases like 3.0aaaaaa
+		switch (tmp[1])
+		{
+			case '\0': case '-': case ':': case '_': break;
+			default: goto err;
+		}
 		vers->version_suffix = *tmp;
 		*tmp = '\0';
 		++tmp;
