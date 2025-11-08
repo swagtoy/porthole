@@ -3,7 +3,7 @@ libs = [ libporthole ]
 tests = [
 	[ 'String test',      'string_test',      'string_test.c' ],
 	[ 'Validation tests', 'validation_tests', 'validation_tests.c' ],
-	[ 'Atom tests',       'atom_tests',       'atom_tests.c' ],
+	[ 'Atom tests',       'atom_tests',       ['atom_tests.c'] ],
 	[ 'Database tests',   'database_tests',   'database_tests.c' ],
 	[ 'Ebuild proc test', 'ebuild_proc_test', 'ebuild_proc_test.c' ],
 #	[ 'Common test',      'common_test',      'common_test.c' ],
@@ -15,6 +15,7 @@ foreach t : tests
 	tt = executable(t[1],
 		t[2],
 		link_with: libporthole,
+		c_args: '-DTESTS_DIR="' + meson.current_source_dir() + '"',
 		include_directories: libporthole_include)
 	test(t[0], tt)
 endforeach

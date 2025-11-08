@@ -4,6 +4,11 @@
 #include <atom.h>
 #include "_debug_prints.h"
 
+#ifndef TESTS_DIR
+#	define TESTS_DIR ""
+#	error "No tests dir set"
+#endif
+
 void
 t_dependency_parsing()
 {
@@ -59,57 +64,52 @@ t_dependency_parsing()
 int
 main()
 {
-	ph_atom_t atom;
-	// Comparison
-	assert(ph_atom_parse_string("<something/package", &atom, 0) == 0);
-	assert(atom.cmp == PH_CMP_LT);
-	assert(ph_atom_parse_string("=something/package", &atom, 0) == 0);
-	assert(atom.cmp == PH_CMP_EQ);
-	assert(ph_atom_parse_string("some#thing/package", &atom, 0) != 0);
-	assert(atom.cmp == PH_CMP_BAD);
-	
-	
-	assert(ph_atom_parse_string("package-1.0:0/2.0", &atom, 0) == 0);
-	
-	// some invalid stuff
-	assert(ph_atom_parse_string("something/pac?kage", &atom, 0) != 0);
-	assert(ph_atom_parse_string("something/+package-1.0:3.0::gentoo", &atom, 0) != 0);
-	assert(ph_atom_parse_string("a b c ", &atom, 0) != 0);
-
-	// Slots
-	assert(ph_atom_parse_string("media-video/knobgoblin-1.0:3.0::gentoo", &atom, 0) == 0);
-	assert(atom.cmp == PH_CMP_UNDEF);
-	_atom_debug_print(&atom);
-	
-	assert(ph_atom_parse_string(">=media-video/knobgoblin-1.0:hey::gentoo", &atom, 0) == 0);
-	assert(atom.cmp != PH_CMP_UNDEF);
-	_atom_debug_print(&atom);
+	char line[1024];
+	int c;
+	FILE *file = fopen(TESTS_DIR "/atom_tests", "r");
+	assert(file);
+	int res;
+	char *pt;
+	ph_atom_t _atom;
+	while (fgets(line, sizeof(line), file) != 0)
+	{
+		if (*line == '*' || *line == '\n')
+			continue;
+		char mode = ' ';
+		bool print = false;
+		if (line[strlen(line)-1] == '\n')
+			line[strlen(line)-1] = '\0';
+		
+		for (pt = line; *pt && *pt != ' '; ++pt)
+			switch (*pt)
+			{
+			case '+': mode = '+'; break;
+			case '-': mode = '-'; break;
+			case 'p': print = true; break;
+			default: assert(!"Invalid character in atom_tests!");
+			}
+		
+		if (mode == '+' || mode == '-')
+		{
+			char *atomstr = pt + 1;
+			if ((mode == '+' && (res = ph_atom_parse_string(atomstr, &_atom, 0)) != 0) ||
+			    (mode == '-' && (res = ph_atom_parse_string(atomstr, &_atom, 0)) == 0))
+			{
+				fprintf(stderr, "Failed to parse atom \"%s\": returned %d!\n", atomstr, res);
+				abort();
+			}
+			else
+				printf("Check \"%s\" passed!\n", atomstr);
+		}
+		
+		if (print)
+			_atom_debug_print(&_atom);
+	}
 	
 	// clobber test
 	char const *noclobber = ">=media-video/revised-knob-3.0-r15:12/5::wow";
-	assert(ph_atom_parse_string(noclobber, &atom, 0) == 0);
+	assert(ph_atom_parse_string(noclobber, &_atom, 0) == 0);
 	assert(strcmp(">=media-video/revised-knob-3.0-r15:12/5::wow", noclobber) == 0);
-	_atom_debug_print(&atom);
-	
-	/* https://github.com/pkgcore/pkgcore/pull/420
-	 * I accidentally stumbled upon this old bug somehow in pkgcore
-	 * and was curious if we would pass it. */
-	assert(ph_atom_parse_string("foo/bar-11-r3", &atom, 0) == 0);
-	assert(strcmp(atom.pkgname, "bar-11-r3") != 0);
-	_atom_debug_print(&atom);
-	assert(ph_atom_parse_string(">=media-video/knob-goblin-1.0_alpha-r4::wow", &atom, 0) == 0);
-	assert(ph_atom_parse_string(">=media-video/knobgoblin:4", &atom, 0) == 0);
-	assert(ph_atom_parse_string("a/a-a_1a", &atom, 0) == 0);
-	_atom_debug_print(&atom);
-	
-	// Some broken stuff
-	assert(ph_atom_parse_string("/hello", &atom, 0) != 0);
-	assert(ph_atom_parse_string("group/-1.0", &atom, 0) != 0);
-	assert(ph_atom_parse_string(">=/", &atom, 0) != 0);
-	//assert(ph_atom_parse_string("@@/hi", &atom) != 0);
-	assert(ph_atom_parse_string(">=media-video/revised-knob-3.0aaaaaaaaa-r15::wow", &atom, 0) == 0);
-	assert(ph_atom_parse_string(">=/", &atom, 0) != 0);
-	assert(ph_atom_parse_string(">=/", &atom, 0) != 0);
 	
 	t_dependency_parsing();
 	

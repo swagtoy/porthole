@@ -1,0 +1,23 @@
++ <something/package
++ =something/package
+- some#thing/package
++ package-1.0:0/2.0
+- something/pac?kage
+- something/+package-1.0:3.0::gentoo
+- a b c 
+
+*** https://github.com/pkgcore/pkgcore/pull/420
+*** I accidentally stumbled upon this old bug somehow in pkgcore
+*** and was curious if we would pass it.
+p+ media-video/knobgoblin-1.0:3.0::gentoo
+p+ >=media-video/knobgoblin-1.0:hey::gentoo
+
+p+ foo/bar-11-r3
++ >=media-video/knob-goblin-1.0_alpha-r4::wow
++ >=media-video/knobgoblin:4
+p+ a/a-a_1a
+
+- /hello
+- group/-1.0
+- >=/
++ >=media-video/revised-knob-3.0aaaaaaaaa-r15::wow
