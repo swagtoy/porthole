@@ -21,3 +21,7 @@ p+ a/a-a_1a
 - group/-1.0
 - >=/
 - >=media-video/revised-knob-3.0aaaaaaaaa-r15::wow
+
+*** sanity check
+> test-2.0 test-1.0
+< test-1.0 test-2.0

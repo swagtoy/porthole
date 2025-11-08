@@ -61,6 +61,12 @@ t_dependency_parsing()
 	assert(ph_atom_parse_string("something/package-1.0:3.0[-be,buz,-bu]i:definitelygentoo", &atom, opts) != 0);
 }
 
+static bool
+_is_blanker(char bl)
+{
+	return bl == ' ' || bl == '\t' || bl == '\0';
+}
+
 int
 main()
 {
@@ -90,9 +96,26 @@ main()
 			default: assert(!"Invalid character in atom_tests!");
 			}
 		
-		if (mode == '+' || mode == '-')
+		char *atomstr = pt + 1;
+		if (mode == '>' || mode == '<')
 		{
-			char *atomstr = pt + 1;
+			char *atomstr2 = pt+1;
+			while (!_is_blanker(*atomstr2))
+				++atomstr2;
+			assert(*atomstr2 == ' ');
+			*atomstr2 = '\0';
+			++atomstr2;
+			
+			if (mode == '>')
+			{
+				//ph_atom_cmp_gt(atomstr, atomstr2, ...);
+			}
+			else {
+				//ph_atom_cmp_lt(atomstr, atomstr2, ...);
+			}
+			printf("%s %c %s CHECK\n", atomstr, mode, atomstr2);
+		}
+		else if (mode == '+' || mode == '-') {
 			if ((mode == '+' && (res = ph_atom_parse_string(atomstr, &_atom, 0)) != 0) ||
 			    (mode == '-' && (res = ph_atom_parse_string(atomstr, &_atom, 0)) == 0))
 			{
