@@ -1,3 +1,4 @@
+#define _DEFAULT_SOURCE
 #include <assert.h>
 #include <stdio.h>
 #include <repo.h>
@@ -19,6 +20,11 @@ main()
 	struct dirent *ent, *ent2;
 	while ((ent = readdir(root)))
 	{
+		if (ent->d_type != DT_DIR)
+		{
+			printf("Skipping %s\n", ent->d_name);
+			continue;
+		}
 		snprintf(path, 2048-1, ROOT "/%s", ent->d_name);
 		cat = opendir(path);
 		if (!cat)
