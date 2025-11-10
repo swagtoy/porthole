@@ -21,8 +21,20 @@ main()
 	{
 		snprintf(path, 2048-1, ROOT "/%s", ent->d_name);
 		cat = opendir(path);
+		if (!cat)
+		{
+			perror("opendir");
+			puts(path);
+			abort();
+		}
 		while ((ent2 = readdir(cat)))
 		{
+			if (!ent2)
+			{
+				perror("readdir");
+				puts(ent2->d_name);
+				abort();
+			}
 			// parse ebuild filename now!
 			ph_atom_t atom;
 			ph_atom_parse_string(ent2->d_name, &atom, PH_ATOM_PARSE_STRIP_EBUILD);
