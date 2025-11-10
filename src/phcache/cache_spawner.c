@@ -220,7 +220,11 @@ phcache_gen_cache(bool update, char const *repo_arg, long jobs)
 	}
 	
 	ph_database_t db;
-	ph_database_open(&db, NULL);
+	if (ph_database_open(&db, NULL) == false)
+	{
+		fprintf(stderr, "Couldn't open database: %s", ph_database_get_error(&db));
+		return false;
+	}
 	ph_database_begin_transaction(&db);
 	
 	fputs("Updating database...  |", stdout);
