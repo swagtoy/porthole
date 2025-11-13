@@ -70,6 +70,7 @@ _is_blanker(char bl)
 int
 main()
 {
+	int ret = 0;
 	char line[1024];
 	FILE *file = fopen(TESTS_DIR "/atom_tests", "r");
 	assert(file);
@@ -91,8 +92,12 @@ main()
 			case '+': mode = '+'; break;
 			case '-': mode = '-'; break;
 			case '>': mode = '>'; break;
-			case '<': mode = '<'; break;
-			case 'p': print = true; break;
+			case '<': mode = '<'; break; 
+			case 'p': print = true; break; // print atom (debugging)
+			
+			// These are hints for parsers which aren't porthole. We
+			//  ignore these, others probably wont.
+			case 'r': break; // repo
 			default: assert(!"Invalid character in atom_tests!");
 			}
 		
@@ -120,7 +125,7 @@ main()
 			    (mode == '-' && (res = ph_atom_parse_string(atomstr, &_atom, 0)) == 0))
 			{
 				fprintf(stderr, "Failed to parse atom \"%s\": returned %d!\n", atomstr, res);
-				abort();
+				ret = 1;
 			}
 			else
 				printf("Check \"%s\" passed!\n", atomstr);
@@ -137,5 +142,5 @@ main()
 	
 	t_dependency_parsing();
 	
-	return 0;
+	return ret;
 }
