@@ -105,10 +105,7 @@ main()
 			}
 		
 		if (not)
-		{
-			fprintf(stderr, "%c\n", mode);
-			assert(not && mode == '=');
-		}
+			assert(not && mode == '=');	
 		
 		char *atomstr = pt + 1;
 		if (mode == '>' || mode == '<' || mode == '=')
