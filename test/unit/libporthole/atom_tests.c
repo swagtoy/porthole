@@ -83,6 +83,7 @@ main()
 			continue;
 		char mode = ' ';
 		bool print = false;
+		bool not = false;
 		if (line[strlen(line)-1] == '\n')
 			line[strlen(line)-1] = '\0';
 		
@@ -92,7 +93,9 @@ main()
 			case '+': mode = '+'; break;
 			case '-': mode = '-'; break;
 			case '>': mode = '>'; break;
-			case '<': mode = '<'; break; 
+			case '<': mode = '<'; break;
+			case '=': mode = '='; break;
+			case '!': not = true; break;
 			case 'p': print = true; break; // print atom (debugging)
 			
 			// These are hints for parsers which aren't porthole. We
@@ -101,8 +104,14 @@ main()
 			default: assert(!"Invalid character in atom_tests!");
 			}
 		
+		if (not)
+		{
+			fprintf(stderr, "%c\n", mode);
+			assert(not && mode == '=');
+		}
+		
 		char *atomstr = pt + 1;
-		if (mode == '>' || mode == '<')
+		if (mode == '>' || mode == '<' || mode == '=')
 		{
 			char *atomstr2 = pt+1;
 			while (!_is_blanker(*atomstr2))
@@ -110,15 +119,22 @@ main()
 			assert(*atomstr2 == ' ');
 			*atomstr2 = '\0';
 			++atomstr2;
-			
+
 			if (mode == '>')
 			{
 				//ph_atom_cmp_gt(atomstr, atomstr2, ...);
 			}
-			else {
+			else if (mode == '<') {
 				//ph_atom_cmp_lt(atomstr, atomstr2, ...);
 			}
-			printf("%s %c %s CHECK\n", atomstr, mode, atomstr2);
+			else if (mode == '=') {
+				if (not)
+					;// ph_atom_cmp_eq(atomstr, atomstr2, ...);
+					
+				else
+					;// !ph_atom_cmp_eq(atomstr, atomstr2, ...);
+			}
+			printf("%s %s%c %s CHECK\n", atomstr, not ? "!" : "", mode, atomstr2);
 		}
 		else if (mode == '+' || mode == '-') {
 			if ((mode == '+' && (res = ph_atom_parse_string(atomstr, &_atom, 0)) != 0) ||

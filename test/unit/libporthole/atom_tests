@@ -1,3 +1,7 @@
+**********************
+*** porthole tests ***
+**********************
+
 + <something/package
 + =something/package
 - some#thing/package
@@ -6,12 +10,12 @@
 r- something/+package-1.0:3.0::gentoo
 - a b c 
 
-*** https://github.com/pkgcore/pkgcore/pull/420
-*** I accidentally stumbled upon this old bug somehow in pkgcore
-*** and was curious if we would pass it.
 rp+ media-video/knobgoblin-1.0:3.0::gentoo
 rp+ >=media-video/knobgoblin-1.0:hey::gentoo
 
+*** https://github.com/pkgcore/pkgcore/pull/420
+*** I accidentally stumbled upon this old bug somehow in pkgcore
+*** and was curious if we would pass it.
 p+ foo/bar-11-r3
 r+ >=media-video/knob-goblin-1.0_alpha-r4::wow
 + >=media-video/knobgoblin:4
@@ -25,3 +29,114 @@ p+ a/a-a_1a
 *** sanity check
 > test-2.0 test-1.0
 < test-1.0 test-2.0
+
+
+*************************
+*** pkgcore cpv tests ***
+*************************
+
+
++ dev-util/pkg
++ dev+/pkg
++ dev-util+/pkg
++ DEV-UTIL/pkg
++ aaa0/pkg
++ aaa-0/pkg
+*** + multi/depth (what?)
++ cross-dev_idiot.hacks-suck/pkg
++ a/pkg
++ foo---/pkg
++ multi--hyphen/pkg
+- .util/pkg
+- _dev/pkg
+- dev-util /pkg
+*** - multi//depth/pkg
+
++ cat/diffball
++ cat/a9
++ cat/a9+
+* + cat/a-100dpi
++ cat/diff-mode-
++ cat/multi--hyphen
++ cat/timidity--
++ cat/frob---
++ cat/diffball-9-
+*** - cat/diffball 
+*** - cat/diffball-9
+- cat/a-3D
+- cat/-df
+- cat/+dfa
+* - cat/timidity--9f
+* - cat/ormaybe---13_beta
+* - cat/bar-11-r3
+
++ bbb-9/foon
++ dev-util/diffball
++ dev-util/diffball-a9
++ dev-ut-asdf/emacs-cvs
++ xfce-base/xfce4
++ bah/f-100dpi
++ dev-util/diffball-blah-monkeys
++ virtual/7z
+* this is vlaid, 
++ x11-drivers/xf86-video-r128
+
++ dev-perl/mod-p-1
++ dev-perl/mod-p-2.3.4
++ dev-perl/mod-p-2.3.4a
++ dev-perl/mod-p-02.3
++ dev-perl/mod-p-2.03
++ dev-perl/mod-p-3d
++ dev-perl/mod-p-3D
+- dev-perl/mod-p-2.3a.4
+- dev-perl/mod-p-2.a.3
+- dev-perl/mod-p-2.3_
+* - dev-perl/mod-p-2.3 
+- dev-perl/mod-p-2.3.
+- dev-perl/mod-p-cvs.2
++ dev-perl/mod-p-1-r1
++ dev-perl/mod-p-1-r300
++ dev-perl/mod-p-1-r0
++ dev-perl/mod-p-1-r10000000000000000000000
+- dev-perl/mod-p-1-r
+- dev-perl/mod-p-1-ra
+- dev-perl/mod-p-1-r
+- dev-perl/mod-p-1-R1
+
+*** skipping some tests for now, lazy
+
+> da/ba-6a da/ba-6
+> da/ba-6a-r1 da/ba-6a
+> da/ba-6.0 da/ba-6
+> da/ba-6.0.0 da/ba-6.0b
+> da/ba-6.02 da/ba-6.0.0
+> da/ba-6.2 da/ba-6.054
+= da/ba-6 da/ba-6
+> db/ba da/ba
+> da/bb da/ba
+> da/ba-6.0_alpha0_p1 da/ba-6.0_alpha
+= da/ba-6.0_alpha da/ba-6.0_alpha0
+> da/ba-6.1 da/ba-6.09
+> da/ba-6.0.1 da/ba-6.0
+> da/ba-12.2.5 da/ba-12.2b
+> dev-lang/erlang-12.2.5 dev-lang/erlang-12.2b
+> dev-lang/erlang-12.2.5-r1 dev-lang/erlang-12.2b
+= da/ba-6.01.0 da/ba-6.010.0
+= da/ba-6.0.1 da/ba-6.000.1
+= da/ba-6.01.0 da/ba-6.01.0-r0
+= da/ba-6.01.0-r0 da/ba-6.01.0-r00
+= da/ba-6.01.0-r1 da/ba-6.01.0-r001
+< da/ba-1.001000000000000000001 da/ba-1.001000000000000000002
+< da/ba-1.00100000000 da/ba-1.0010000000000000001
+< da/ba-1.01 da/ba-1.1
+> da/ba-10181 da/ba-1181
+> da/ba-10361 da/ba-1361
+> da/ba-101001 da/ba-11001
+> sys-apps/net-tools-1.60_p2010081516093 sys-apps/net-tools-1.60_p2009072801401
+> sys-apps/net-tools-1.60_p20100815160931 sys-apps/net-tools-1.60_p20090728014017
+> sys-apps/net-tools-1.60_p20100815160931 sys-apps/net-tools-1.60_p20090728014017-r1
+!= da/ba-6.0_alpha0_p1 da/ba-6.0_alpha
+= da/ba-6.0_alpha0 da/ba-6.0_alpha
+!= da/ba-6.0 foon
+
+*** TODO some more
