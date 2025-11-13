@@ -18,7 +18,8 @@ rp+ >=media-video/knobgoblin-1.0:hey::gentoo
 *** and was curious if we would pass it.
 p+ foo/bar-11-r3
 r+ >=media-video/knob-goblin-1.0_alpha-r4::wow
-+ >=media-video/knobgoblin:4
+*** Fails, comparison without version makes no ham sense
+v- >=media-video/knobgoblin:4
 p+ a/a-a_1a
 
 - /hello

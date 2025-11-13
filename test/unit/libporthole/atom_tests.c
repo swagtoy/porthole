@@ -101,6 +101,7 @@ main()
 			// These are hints for parsers which aren't porthole. We
 			//  ignore these, others probably wont.
 			case 'r': break; // repo
+			case 'v': break; // version
 			default: assert(!"Invalid character in atom_tests!");
 			}
 		
