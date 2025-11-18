@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <str.h>
 #include <atom.h>
+#include <signal.h>
 #include "_debug_prints.h"
 
 #ifndef TESTS_DIR
@@ -83,6 +84,7 @@ main()
 			continue;
 		char mode = ' ';
 		bool print = false;
+		bool trace = false;
 		bool not = false;
 		if (line[strlen(line)-1] == '\n')
 			line[strlen(line)-1] = '\0';
@@ -97,6 +99,7 @@ main()
 			case '=': mode = '='; break;
 			case '!': not = true; break;
 			case 'p': print = true; break; // print atom (debugging)
+			case 't': trace = true; break; // trace here
 			
 			// These are hints for parsers which aren't porthole. We
 			//  ignore these, others probably wont.
@@ -117,6 +120,8 @@ main()
 			assert(*atomstr2 == ' ');
 			*atomstr2 = '\0';
 			++atomstr2;
+		
+			if (trace) raise(SIGTRAP);
 
 			if (mode == '>')
 			{
@@ -135,6 +140,7 @@ main()
 			printf("%s %s%c %s CHECK\n", atomstr, not ? "!" : "", mode, atomstr2);
 		}
 		else if (mode == '+' || mode == '-') {
+			if (trace) raise(SIGTRAP);
 			if ((mode == '+' && (res = ph_atom_parse_string(atomstr, &_atom, 0)) != 0) ||
 			    (mode == '-' && (res = ph_atom_parse_string(atomstr, &_atom, 0)) == 0))
 			{

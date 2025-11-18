@@ -49,7 +49,8 @@ p+ a/a-a_1a
 + foo---/pkg
 + multi--hyphen/pkg
 - .util/pkg
-- _dev/pkg
+*** pkgcore claims this was invalid. It's not. Liars.
++ _dev/pkg
 - dev-util /pkg
 *** - multi//depth/pkg
 
