@@ -103,21 +103,7 @@ bool ph_atom_pkgname_is_valid(char *pkgname)
 	for (char *c = pkgname; *c != '\0'; ++c)
 		if (!COMMON_CHAR_CHECK(*c))
 			return false;
-	
-	// TODO ???
-	// First check out any revision info
-	char *last_hyp;
-	if ((last_hyp = strrchr(pkgname, '-')) == NULL)
-		return true;
-	if (last_hyp[1] == 'r')
-	{
-		/* If it fails (i.e. r34isfun) then that means it's valid. So
-		 * we'll flip the return */
-		return !_numeric_until_end(last_hyp + 2);
-	}
-	if (isdigit(last_hyp[1]))
-			return false;
-	
+
 	return true;
 }
 
