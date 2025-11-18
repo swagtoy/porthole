@@ -142,3 +142,26 @@ p+ a/a-a_1a
 != da/ba-6.0 foon
 
 *** TODO some more
+
+* TODO Valiadte these ones
+
+- <dev-haskell/wai-3.3:=[]
+* - >=dev-texlive/texlive-basic-2-024
+- >=media-lAibs/gstreamer-1.6.0::1.0
+- x15-libs/fltk:/1=
+- =dev-ml/stdio-0.17*t:=[ocamlopt?]
+- sys-libs/tdb[python,python(-)?,python_single_target_python3_12(-)?,python_single_target_python3_13(-)?]
+- >=kde-frameworks/kcrash-2.16.0:6*
+- >=kde-frameworks/kcrash-6.16.0:6*
+* + >=kde-apps/libkdegames-25.0-8
+- media-libs/gd:/2=]
++ dev-lbs/glib::2
++ <dev-haskell/mtl-2.3:/mtl-=[profile?]
+- dev-java/jAunit:4*
+- dev-lag/lua::5.4
+- dev-lang/pithon:3.1*[threads(+)]
+- sys-libs/tdb[python,python_single_target_python3_11(-)?,python_single_target_python3_12(-)?,python(-)?]
+- dev-lang/python:3.1*[threads(+)]
+- >=sys-kernel/linux-headers-4.4:0*
+- dev-javatuj/ni:4*
+- >=dev-libs/libgee-0-8.5:0..8=
